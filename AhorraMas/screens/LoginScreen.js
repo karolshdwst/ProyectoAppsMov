@@ -10,7 +10,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ImageBackground,
+  Image,
 } from 'react-native';
+
+const cerdo = require('../assets/cerdo.png');
 
 const LoginScreen = ({ onLogin, onNavigate }) => {
   const [email, setEmail] = useState('');
@@ -50,7 +54,7 @@ const LoginScreen = ({ onLogin, onNavigate }) => {
             {/* Icon */}
             <View style={styles.iconContainer}>
               <View style={styles.piggyBankPlaceholder}>
-                <Text style={styles.piggyBankEmoji}>🐷</Text>
+                <Image source={cerdo} style={styles.piggyBankImage} />
               </View>
             </View>
 
@@ -120,6 +124,12 @@ const LoginScreen = ({ onLogin, onNavigate }) => {
                   <Text style={styles.termsLink}>Política de privacidad</Text>
                 </Text>
               </View>
+              <TouchableOpacity
+                          style={styles.primaryButton}
+                          onPress={() => onNavigate('presupuesto')}
+                        >
+                          <Text style={styles.primaryButtonText}>Presupuesto</Text>
+                        </TouchableOpacity>
             </View>
           </View>
         </ScrollView>
@@ -253,6 +263,19 @@ const styles = StyleSheet.create({
   },
   termsLink: {
     color: '#9ca3af',
+  },
+  piggyBankImage: {
+    width: 80,
+    height: 80,
+    resizeMode: 'contain',
+    overflow: 'hidden',
+  },
+  primaryButton: {
+    width: '100%',
+    backgroundColor: 'white',
+    paddingVertical: 16,
+    borderRadius: 25,
+    alignItems: 'center',
   },
 });
 

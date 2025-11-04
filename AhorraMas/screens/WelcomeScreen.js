@@ -9,6 +9,8 @@ import {
   Dimensions,
 } from 'react-native';
 
+const cerdo = require('../assets/cerdo.png');
+
 const { width, height } = Dimensions.get('window');
 
 const WelcomeScreen = ({ onNavigate }) => {
@@ -32,7 +34,7 @@ const WelcomeScreen = ({ onNavigate }) => {
           {/* Piggy Bank Illustration Placeholder */}
           <View style={styles.illustrationContainer}>
             <View style={styles.piggyBankPlaceholder}>
-              <Text style={styles.piggyBankEmoji}>🐷</Text>
+              <Image source={cerdo} style={styles.piggyBankImage} />
             </View>
           </View>
 
@@ -81,6 +83,13 @@ const WelcomeScreen = ({ onNavigate }) => {
             onPress={() => onNavigate('login')}
           >
             <Text style={styles.primaryButtonText}>Login</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.primaryButton}
+            onPress={() => onNavigate('presupuesto')}
+          >
+            <Text style={styles.primaryButtonText}>Presupuesto</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -196,6 +205,12 @@ const styles = StyleSheet.create({
     color: '#374151',
     fontSize: 16,
     fontWeight: '600',
+  },
+  piggyBankImage: {
+    width: 80,
+    height: 80,
+    resizeMode: 'contain',
+    overflow: 'hidden',
   },
 });
 

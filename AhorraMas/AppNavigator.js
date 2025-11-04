@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import WelcomeScreen from './screens/WelcomeScreen';
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
+import PantallaPresupuesto from './screens/presupuestos/PantallaPresupuesto';
 
 const AppNavigator = () => {
     const [currentScreen, setCurrentScreen] = useState('welcome');
@@ -37,6 +38,12 @@ const AppNavigator = () => {
                 return (
                     <RegisterScreen
                         onRegister={handleRegister}
+                        onNavigate={handleNavigate}
+                    />
+                );
+            case 'presupuesto':
+                return (
+                    <PantallaPresupuesto
                         onNavigate={handleNavigate}
                     />
                 );

@@ -10,7 +10,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Image,
+  ImageBackground,
 } from 'react-native';
+
+const cerdo = require('../assets/cerdo.png');
 
 const RegisterScreen = ({ onRegister, onNavigate }) => {
   const [name, setName] = useState('');
@@ -52,7 +56,7 @@ const RegisterScreen = ({ onRegister, onNavigate }) => {
             {/* Icon */}
             <View style={styles.iconContainer}>
               <View style={styles.piggyBankPlaceholder}>
-                <Text style={styles.piggyBankEmoji}>🐷</Text>
+                <Image source={cerdo} style={styles.piggyBankImage} />
               </View>
             </View>
 
@@ -265,6 +269,11 @@ const styles = StyleSheet.create({
   },
   termsLink: {
     color: '#9ca3af',
+  },piggyBankImage: {
+    width: 80,
+    height: 80,
+    resizeMode: 'contain',
+    overflow: 'hidden',
   },
 });
 
