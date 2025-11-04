@@ -8,10 +8,10 @@ import {
 
 const BottomNavigation = ({ activeTab, onTabChange }) => {
   const tabs = [
-    { id: 'home', icon: '🏠', label: 'Inicio' },
-    { id: 'balance', icon: '📊', label: 'Balance' },
-    { id: 'transactions', icon: '💳', label: 'Transacciones' },
-    { id: 'user', icon: '👤', label: 'Usuario' },
+    { id: 'home', icon: 'Inicio', label: 'Inicio' },
+    { id: 'balance', icon: 'Balance', label: 'Balance' },
+    { id: 'transactions', icon: 'Transacciones', label: 'Transacciones' },
+    { id: 'user', icon: 'Usuario', label: 'Usuario' },
   ];
 
   return (

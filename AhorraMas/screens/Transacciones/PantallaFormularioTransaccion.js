@@ -11,7 +11,6 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
 
 const categories = [
   'Salary',
@@ -149,22 +148,24 @@ const TransactionFormScreen = ({ transaction, onSave, onCancel }) => {
               {/* Category */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Categoría</Text>
-                <View style={styles.pickerContainer}>
-                  <Picker
-                    selectedValue={category}
-                    onValueChange={setCategory}
-                    style={styles.picker}
-                    dropdownIconColor="#9ca3af"
-                  >
-                    {categories.map((cat) => (
-                      <Picker.Item
-                        key={cat}
-                        label={cat}
-                        value={cat}
-                        color={Platform.OS === 'ios' ? 'white' : '#374151'}
-                      />
-                    ))}
-                  </Picker>
+                <View style={styles.categoryContainer}>
+                  {categories.map((cat) => (
+                    <TouchableOpacity
+                      key={cat}
+                      style={[
+                        styles.categoryButton,
+                        category === cat && styles.selectedCategoryButton
+                      ]}
+                      onPress={() => setCategory(cat)}
+                    >
+                      <Text style={[
+                        styles.categoryButtonText,
+                        category === cat && styles.selectedCategoryButtonText
+                      ]}>
+                        {cat}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
               </View>
 
@@ -308,14 +309,27 @@ const styles = StyleSheet.create({
   activeTypeButtonText: {
     color: '#374151',
   },
-  pickerContainer: {
-    backgroundColor: '#6b7280',
-    borderRadius: 12,
-    overflow: 'hidden',
+  categoryContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
-  picker: {
-    color: 'white',
-    backgroundColor: 'transparent',
+  categoryButton: {
+    backgroundColor: '#6b7280',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  selectedCategoryButton: {
+    backgroundColor: 'white',
+  },
+  categoryButtonText: {
+    color: '#d1d5db',
+    fontSize: 14,
+  },
+  selectedCategoryButtonText: {
+    color: '#374151',
   },
   dateContainer: {
     flexDirection: 'row',

@@ -2,26 +2,60 @@ import React, { useState } from 'react';
 import PantallaBienvenida from './screens/Autenticacion/PantallaBienvenida';
 import PantallaLogin from './screens/Autenticacion/PantallaLogin';
 import PantallaRegistro from './screens/Autenticacion/PantallaRegistro';
+import PantallaPrincipal from './screens/Panel-Principal/PantallaPrincipal';
+import PantallaEstadisticas from './screens/Estadisticas/PantallaEstadisticas';
+import PantallaListaTransacciones from './screens/Transacciones/PantallaListaTransacciones';
+import PantallaFormularioTransaccion from './screens/Transacciones/PantallaFormularioTransaccion';
 import PantallaPresupuesto from './screens/Presupuestos/PantallaPresupuesto';
 
 const AppNavigator = () => {
     const [currentScreen, setCurrentScreen] = useState('welcome');
+    const [activeTab, setActiveTab] = useState('home');
 
     const handleNavigate = (screen) => {
         console.log(`Navegando a: ${screen}`);
         setCurrentScreen(screen);
     };
 
+    const handleTabChange = (tab) => {
+        console.log(`Cambiando a tab: ${tab}`);
+        setActiveTab(tab);
+        
+        // Mapear tabs a pantallas
+        switch (tab) {
+            case 'home':
+                setCurrentScreen('main');
+                break;
+            case 'balance':
+                setCurrentScreen('estadisticas');
+                break;
+            case 'transactions':
+                setCurrentScreen('transacciones');
+                break;
+            case 'user':
+                setCurrentScreen('presupuestos');
+                break;
+        }
+    };
+
+    const handleAddTransaction = () => {
+        console.log('Navegando a formulario de transacción');
+        setCurrentScreen('formulario-transaccion');
+    };
+
+    const handleBackToTransactions = () => {
+        console.log('Volviendo a lista de transacciones');
+        setCurrentScreen('transacciones');
+    };
+
     const handleLogin = () => {
-        console.log('Usuario logueado exitosamente');
-        // Aquí podrías navegar a la pantalla principal de la app
-        alert('¡Login exitoso!');
+        console.log('Navegando a pantalla principal');
+        setCurrentScreen('main');
+        setActiveTab('home');
     };
 
     const handleRegister = () => {
-        console.log('Usuario registrado exitosamente');
-        // Aquí podrías navegar a la pantalla principal o al login
-        alert('¡Registro exitoso!');
+        console.log('Registro completado, navegando a login');
         setCurrentScreen('login');
     };
 
@@ -41,10 +75,41 @@ const AppNavigator = () => {
                         onNavigate={handleNavigate}
                     />
                 );
-            case 'presupuesto':
+            case 'main':
+                return (
+                    <PantallaPrincipal
+                        onNavigate={handleNavigate}
+                        activeTab={activeTab}
+                        onTabChange={handleTabChange}
+                    />
+                );
+            case 'estadisticas':
+                return (
+                    <PantallaEstadisticas
+                        activeTab={activeTab}
+                        onTabChange={handleTabChange}
+                    />
+                );
+            case 'transacciones':
+                return (
+                    <PantallaListaTransacciones
+                        activeTab={activeTab}
+                        onTabChange={handleTabChange}
+                        onAdd={handleAddTransaction}
+                    />
+                );
+            case 'formulario-transaccion':
+                return (
+                    <PantallaFormularioTransaccion
+                        onSave={handleBackToTransactions}
+                        onCancel={handleBackToTransactions}
+                    />
+                );
+            case 'presupuestos':
                 return (
                     <PantallaPresupuesto
-                        onNavigate={handleNavigate}
+                        activeTab={activeTab}
+                        onTabChange={handleTabChange}
                     />
                 );
             default:

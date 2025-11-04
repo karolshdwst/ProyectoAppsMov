@@ -9,7 +9,7 @@ import {
   Dimensions,
 } from 'react-native';
 
-const cerdo = require('../assets/cerdo.png');
+const cerdo = require('../../assets/cerdo.png');
 
 const { width, height } = Dimensions.get('window');
 
@@ -83,13 +83,6 @@ const WelcomeScreen = ({ onNavigate }) => {
             onPress={() => onNavigate('login')}
           >
             <Text style={styles.primaryButtonText}>Login</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={() => onNavigate('presupuesto')}
-          >
-            <Text style={styles.primaryButtonText}>Presupuesto</Text>
           </TouchableOpacity>
         </View>
       </View>

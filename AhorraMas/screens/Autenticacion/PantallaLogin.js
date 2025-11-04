@@ -14,22 +14,15 @@ import {
   Image,
 } from 'react-native';
 
-const cerdo = require('../assets/cerdo.png');
+const cerdo = require('../../assets/cerdo.png');
 
 const LoginScreen = ({ onLogin, onNavigate }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleSubmit = () => {
-    if (email && password) {
-      onLogin();
-    } else {
-      Alert.alert(
-        'Error',
-        'Por favor completa todos los campos',
-        [{ text: 'OK' }]
-      );
-    }
+    // Sin validaciones, ir directo a la pantalla principal
+    onLogin();
   };
 
   return (
@@ -124,12 +117,6 @@ const LoginScreen = ({ onLogin, onNavigate }) => {
                   <Text style={styles.termsLink}>Política de privacidad</Text>
                 </Text>
               </View>
-              <TouchableOpacity
-                          style={styles.primaryButton}
-                          onPress={() => onNavigate('presupuesto')}
-                        >
-                          <Text style={styles.primaryButtonText}>Presupuesto</Text>
-                        </TouchableOpacity>
             </View>
           </View>
         </ScrollView>

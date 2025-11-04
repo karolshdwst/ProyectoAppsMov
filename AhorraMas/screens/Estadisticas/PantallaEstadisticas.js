@@ -138,28 +138,28 @@ const StatisticsScreen = ({ transactions = [], activeTab, onTabChange }) => {
             style={[styles.navItem, activeTab === 'home' && styles.activeNavItem]}
             onPress={() => onTabChange('home')}
           >
-            <Text style={[styles.navText, activeTab === 'home' && styles.activeNavText]}>🏠</Text>
+            <Text style={[styles.navText, activeTab === 'home' && styles.activeNavText]}>Inicio</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
             style={[styles.navItem, activeTab === 'balance' && styles.activeNavItem]}
             onPress={() => onTabChange('balance')}
           >
-            <Text style={[styles.navText, activeTab === 'balance' && styles.activeNavText]}>📊</Text>
+            <Text style={[styles.navText, activeTab === 'balance' && styles.activeNavText]}>Balance</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
             style={[styles.navItem, activeTab === 'transactions' && styles.activeNavItem]}
             onPress={() => onTabChange('transactions')}
           >
-            <Text style={[styles.navText, activeTab === 'transactions' && styles.activeNavText]}>💳</Text>
+            <Text style={[styles.navText, activeTab === 'transactions' && styles.activeNavText]}>Transacciones</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
             style={[styles.navItem, activeTab === 'user' && styles.activeNavItem]}
             onPress={() => onTabChange('user')}
           >
-            <Text style={[styles.navText, activeTab === 'user' && styles.activeNavText]}>👤</Text>
+            <Text style={[styles.navText, activeTab === 'user' && styles.activeNavText]}>Usuario</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -358,21 +358,25 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingVertical: 12,
     paddingHorizontal: 8,
+    gap: 8,
   },
   navItem: {
     flex: 1,
     alignItems: 'center',
     paddingVertical: 8,
+    paddingHorizontal: 4,
     borderRadius: 12,
   },
   activeNavItem: {
     backgroundColor: '#6b7280',
   },
   navText: {
-    fontSize: 20,
+    fontSize: 12,
+    color: '#d1d5db',
+    textAlign: 'center',
   },
   activeNavText: {
-    // Active nav styling can be added here
+    color: 'white',
   },
 });
 

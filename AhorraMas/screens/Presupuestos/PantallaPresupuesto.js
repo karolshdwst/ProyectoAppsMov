@@ -105,28 +105,28 @@ const PantallaPresupuesto = ({ presupuestos = [], onUpdateBudget, onLogout, acti
             style={[styles.itemNavegacion, activeTab === 'home' && styles.itemActivo]}
             onPress={() => onTabChange('home')}
           >
-            <Text style={[styles.textoNav, activeTab === 'home' && styles.textoNavActivo]}>🏠</Text>
+            <Text style={[styles.textoNav, activeTab === 'home' && styles.textoNavActivo]}>Inicio</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
             style={[styles.itemNavegacion, activeTab === 'balance' && styles.itemActivo]}
             onPress={() => onTabChange('balance')}
           >
-            <Text style={[styles.textoNav, activeTab === 'balance' && styles.textoNavActivo]}>📊</Text>
+            <Text style={[styles.textoNav, activeTab === 'balance' && styles.textoNavActivo]}>Balance</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
             style={[styles.itemNavegacion, activeTab === 'transactions' && styles.itemActivo]}
             onPress={() => onTabChange('transactions')}
           >
-            <Text style={[styles.textoNav, activeTab === 'transactions' && styles.textoNavActivo]}>💳</Text>
+            <Text style={[styles.textoNav, activeTab === 'transactions' && styles.textoNavActivo]}>Transacciones</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
             style={[styles.itemNavegacion, activeTab === 'user' && styles.itemActivo]}
             onPress={() => onTabChange('user')}
           >
-            <Text style={[styles.textoNav, activeTab === 'user' && styles.textoNavActivo]}>👤</Text>
+            <Text style={[styles.textoNav, activeTab === 'user' && styles.textoNavActivo]}>Usuario</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -270,18 +270,22 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingVertical: 12,
     paddingHorizontal: 8,
+    gap: 8,
   },
   itemNavegacion: {
     flex: 1,
     alignItems: 'center',
     paddingVertical: 8,
+    paddingHorizontal: 4,
     borderRadius: 12,
   },
   itemActivo: {
     backgroundColor: '#6b7280',
   },
   textoNav: {
-    fontSize: 20,
+    fontSize: 12,
+    color: '#d1d5db',
+    textAlign: 'center',
   },
   textoNavActivo: {
     color: 'white',

@@ -14,7 +14,7 @@ import {
   ImageBackground,
 } from 'react-native';
 
-const cerdo = require('../assets/cerdo.png');
+const cerdo = require('../../assets/cerdo.png');
 
 const RegisterScreen = ({ onRegister, onNavigate }) => {
   const [name, setName] = useState('');
@@ -23,15 +23,8 @@ const RegisterScreen = ({ onRegister, onNavigate }) => {
   const [phone, setPhone] = useState('');
 
   const handleSubmit = () => {
-    if (name && email && password && phone) {
-      onRegister();
-    } else {
-      Alert.alert(
-        'Error',
-        'Por favor completa todos los campos',
-        [{ text: 'OK' }]
-      );
-    }
+    // Sin validaciones, ir directo al login
+    onRegister();
   };
 
   return (
