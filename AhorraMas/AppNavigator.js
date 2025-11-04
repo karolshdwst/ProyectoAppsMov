@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import WelcomeScreen from './screens/WelcomeScreen';
-import LoginScreen from './screens/LoginScreen';
-import RegisterScreen from './screens/RegisterScreen';
-import PantallaPresupuesto from './screens/presupuestos/PantallaPresupuesto';
+import PantallaBienvenida from './screens/Autenticacion/PantallaBienvenida';
+import PantallaLogin from './screens/Autenticacion/PantallaLogin';
+import PantallaRegistro from './screens/Autenticacion/PantallaRegistro';
+import PantallaPresupuesto from './screens/Presupuestos/PantallaPresupuesto';
 
 const AppNavigator = () => {
     const [currentScreen, setCurrentScreen] = useState('welcome');
@@ -29,14 +29,14 @@ const AppNavigator = () => {
         switch (currentScreen) {
             case 'login':
                 return (
-                    <LoginScreen
+                    <PantallaLogin
                         onLogin={handleLogin}
                         onNavigate={handleNavigate}
                     />
                 );
             case 'register':
                 return (
-                    <RegisterScreen
+                    <PantallaRegistro
                         onRegister={handleRegister}
                         onNavigate={handleNavigate}
                     />
@@ -48,7 +48,7 @@ const AppNavigator = () => {
                     />
                 );
             default:
-                return <WelcomeScreen onNavigate={handleNavigate} />;
+                return <PantallaBienvenida onNavigate={handleNavigate} />;
         }
     };
 
