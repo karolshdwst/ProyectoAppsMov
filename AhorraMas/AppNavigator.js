@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import PantallaBienvenida from './screens/Autenticacion/PantallaBienvenida';
 import PantallaLogin from './screens/Autenticacion/PantallaLogin';
 import PantallaRegistro from './screens/Autenticacion/PantallaRegistro';
+import ForgotPasswordScreen from './screens/Autenticacion/OlvidasteContrasenna';
 import PantallaPrincipal from './screens/Panel-Principal/PantallaPrincipal';
 import PantallaEstadisticas from './screens/Estadisticas/PantallaEstadisticas';
 import PantallaListaTransacciones from './screens/Transacciones/PantallaListaTransacciones';
@@ -72,6 +73,12 @@ const AppNavigator = () => {
                 return (
                     <PantallaRegistro
                         onRegister={handleRegister}
+                        onNavigate={handleNavigate}
+                    />
+                );
+            case 'forgot-password':
+                return (
+                    <ForgotPasswordScreen
                         onNavigate={handleNavigate}
                     />
                 );
