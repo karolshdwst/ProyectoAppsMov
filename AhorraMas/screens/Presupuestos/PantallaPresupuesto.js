@@ -87,7 +87,6 @@ const PantallaPresupuesto = ({ presupuestos = [], onUpdateBudget, onLogout, acti
             style={styles.botonConfiguracion}
             onPress={manejarConfiguración}
           >
-            <Text style={styles.iconoConfiguracion}>⚙️</Text>
             <Text style={styles.textoConfiguracion}>Configuración</Text>
           </TouchableOpacity>
 
