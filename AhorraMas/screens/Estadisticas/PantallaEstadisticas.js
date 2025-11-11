@@ -25,7 +25,7 @@ const StatisticsScreen = ({ transactions = [], activeTab, onTabChange }) => {
   const colors = ['#22d3ee', '#06b6d4', '#0891b2', '#0e7490', '#155e75'];
 
   const renderCategoryItem = ([category, amount], index) => {
-    const percentage = (amount / totalExpenses) * 100;
+    const percentage = totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0;
     
     return (
       <View key={category} style={styles.categoryItem}>
@@ -80,14 +80,13 @@ const StatisticsScreen = ({ transactions = [], activeTab, onTabChange }) => {
 
           {/* Monthly Savings Chart */}
           <View style={styles.chartCard}>
-            <Text style={styles.chartTitle}>Estadísticas de Gastos</Text>
+            <Text style={styles.chartTitle}>Ahorros Mensuales</Text>
             
-            {/* Pie Chart Placeholder */}
+            {/* Chart Placeholder */}
             {totalExpenses > 0 ? (
-              <View style={styles.pieChartContainer}>
-                <View style={styles.pieChartPlaceholder}>
-                  <Text style={styles.pieChartText}>${totalExpenses.toFixed(0)}</Text>
-                  <Text style={styles.pieChartSubtext}>Total Gastos</Text>
+              <View style={styles.chartContainer}>
+                <View style={styles.chartPlaceholder}>
+                  <Text style={styles.chartText}>📊</Text>
                 </View>
               </View>
             ) : (
@@ -95,21 +94,6 @@ const StatisticsScreen = ({ transactions = [], activeTab, onTabChange }) => {
                 <Text style={styles.emptyChartText}>No hay gastos registrados</Text>
               </View>
             )}
-
-            {/* Legend */}
-            <View style={styles.legendContainer}>
-              {categories.slice(0, 4).map(([category, amount], index) => (
-                <View key={category} style={styles.legendItem}>
-                  <View 
-                    style={[
-                      styles.legendColorIndicator,
-                      { backgroundColor: colors[index % colors.length] }
-                    ]}
-                  />
-                  <Text style={styles.legendText}>{category}</Text>
-                </View>
-              ))}
-            </View>
           </View>
 
           {/* Expenses by Category */}
@@ -216,7 +200,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   chartCard: {
-    backgroundColor: '#6b7280',
+    backgroundColor: '#4b5563',
     borderRadius: 16,
     padding: 24,
     marginBottom: 24,
@@ -227,26 +211,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 16,
   },
-  pieChartContainer: {
+  chartContainer: {
     alignItems: 'center',
     marginBottom: 24,
   },
-  pieChartPlaceholder: {
-    width: 120,
+  chartPlaceholder: {
+    width: '100%',
     height: 120,
-    borderRadius: 60,
-    backgroundColor: '#22d3ee',
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#374151',
+    borderRadius: 12,
   },
-  pieChartText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  pieChartSubtext: {
-    color: 'white',
-    fontSize: 12,
+  chartText: {
+    fontSize: 48,
   },
   emptyChartContainer: {
     alignItems: 'center',
@@ -256,27 +234,8 @@ const styles = StyleSheet.create({
     color: '#9ca3af',
     fontSize: 16,
   },
-  legendContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  legendColorIndicator: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
-  legendText: {
-    color: '#d1d5db',
-    fontSize: 14,
-  },
   categoryCard: {
-    backgroundColor: '#6b7280',
+    backgroundColor: '#4b5563',
     borderRadius: 16,
     padding: 24,
     marginBottom: 24,
@@ -320,7 +279,7 @@ const styles = StyleSheet.create({
   },
   categoryProgressContainer: {
     height: 8,
-    backgroundColor: '#4b5563',
+    backgroundColor: '#374151',
     borderRadius: 4,
     overflow: 'hidden',
   },
@@ -337,7 +296,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   simulateButton: {
-    backgroundColor: '#6b7280',
+    backgroundColor: '#4b5563',
     paddingVertical: 16,
     borderRadius: 25,
     alignItems: 'center',

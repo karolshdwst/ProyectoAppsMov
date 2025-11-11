@@ -65,7 +65,7 @@ const DashboardScreen = ({
                 >
                     {/* Header */}
                     <View style={styles.header}>
-                        <Text style={styles.titleText}>Balance</Text>
+                        <Text style={styles.titleText}>Inicio</Text>
                         <TouchableOpacity>
                             <Text style={styles.helpText}>Ayuda</Text>
                         </TouchableOpacity>
