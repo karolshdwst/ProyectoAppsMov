@@ -116,9 +116,12 @@ const RegisterScreen = ({ onRegister, onNavigate }) => {
                 
                 <View style={styles.loginContainer}>
                   <Text style={styles.loginText}>¿Ya tienes cuenta? </Text>
+                  {/* link para mandarte a otra screen */}
+
                   <TouchableOpacity onPress={() => onNavigate('login')}>
                     <Text style={styles.loginLink}>Inicia sesión</Text>
                   </TouchableOpacity>
+                  
                 </View>
               </View>
 
