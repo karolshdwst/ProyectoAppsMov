@@ -9,20 +9,33 @@ import {
   Alert,
 } from 'react-native';
 
-const TransactionsListScreen = ({ 
-  transactions = [], 
-  onDelete, 
-  onEdit, 
+import TrashIcon from '../../assets/icons/trash.svg';
+import EditIcon from '../../assets/icons/edit.svg';
+
+const TransactionsListScreen = ({
+  transactions = [],
+  onDelete,
+  onEdit,
   onAdd,
   activeTab,
-  onTabChange 
+  onTabChange
 }) => {
+
   const [filterType, setFilterType] = useState('all');
   const [filterCategory, setFilterCategory] = useState('all');
 
-  const categories = Array.from(new Set(transactions.map(t => t.category)));
-  
-  const filteredTransactions = transactions.filter(t => {
+  const mockTransactions = [
+    { id: '1', name: 'Salario', amount: 250, type: 'income', category: 'Salario', date: '2024-06-01' },
+    { id: '2', name: 'Supermercado', amount: 75, type: 'expense', category: 'Comida', date: '2024-06-02' },
+    { id: '3', name: 'Venta', amount: 100, type: 'income', category: 'Ventas', date: '2024-06-03' },
+    { id: '4', name: 'Restaurante', amount: 50, type: 'expense', category: 'Comida', date: '2024-06-04' },
+  ];
+
+  const allTransactions = transactions.length ? transactions : mockTransactions;
+
+  const categories = Array.from(new Set(allTransactions.map(t => t.category)));
+
+  const filteredTransactions = allTransactions.filter(t => {
     if (filterType !== 'all' && t.type !== filterType) return false;
     if (filterCategory !== 'all' && t.category !== filterCategory) return false;
     return true;
@@ -34,55 +47,10 @@ const TransactionsListScreen = ({
       '¿Estás seguro de que quieres eliminar esta transacción?',
       [
         { text: 'Cancelar', style: 'cancel' },
-        { text: 'Eliminar', style: 'destructive', onPress: () => onDelete(id) }
+        { text: 'Eliminar', style: 'destructive', onPress: () => onDelete && onDelete(id) }
       ]
     );
   };
-
-  const renderTransaction = ({ item: transaction }) => (
-    <View style={styles.transactionItem}>
-      <View style={styles.transactionContent}>
-        <View style={styles.transactionHeader}>
-          <Text style={styles.transactionCategory}>{transaction.category}</Text>
-          <View style={[
-            styles.typeBadge,
-            transaction.type === 'income' ? styles.incomeBadge : styles.expenseBadge
-          ]}>
-            <Text style={styles.typeBadgeText}>
-              {transaction.type === 'income' ? 'Ingreso' : 'Gasto'}
-            </Text>
-          </View>
-        </View>
-        <Text style={styles.transactionDescription}>{transaction.description}</Text>
-        <Text style={styles.transactionDate}>{transaction.date}</Text>
-      </View>
-      
-      <View style={styles.transactionActions}>
-        <Text style={[
-          styles.transactionAmount,
-          transaction.type === 'income' ? styles.incomeAmount : styles.expenseAmount
-        ]}>
-          {transaction.type === 'income' ? '+' : '-'}${transaction.amount}
-        </Text>
-        
-        <View style={styles.actionButtons}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => onEdit(transaction)}
-          >
-            <Text style={styles.actionButtonText}>✏️</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => handleDelete(transaction.id)}
-          >
-            <Text style={styles.actionButtonText}>🗑️</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
-  );
 
   const renderFilterButton = (type, label) => (
     <TouchableOpacity
@@ -101,9 +69,43 @@ const TransactionsListScreen = ({
     </TouchableOpacity>
   );
 
+  const renderTransaction = ({ item }) => (
+    <View style={styles.transactionItem}>
+      
+      {/* IZQUIERDA */}
+      <View style={styles.leftSection}>
+        <Text style={styles.transactionText}>{item.name}</Text>
+        <Text style={styles.transactionCategory}>{item.category}</Text>
+        <Text style={styles.transactionDate}>{item.date}</Text>
+      </View>
+
+      {/* DERECHA: monto + íconos */}
+      <View style={styles.rightSection}>
+        <Text
+          style={[
+            styles.transactionAmount,
+            item.type === 'income' ? styles.incomeAmount : styles.expenseAmount
+          ]}
+        >
+          {item.type === 'income' ? '+' : '-'}${item.amount}
+        </Text>
+
+        <TouchableOpacity onPress={() => handleDelete(item.id)}>
+          <TrashIcon width={20} height={20}/>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => onEdit && onEdit(item)}>
+          <EditIcon width={20} height={20}/>
+        </TouchableOpacity>
+      </View>
+
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.screenContainer}>
+
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.titleText}>Transacciones</Text>
@@ -115,12 +117,11 @@ const TransactionsListScreen = ({
         {/* Filters */}
         <View style={styles.filtersContainer}>
           <View style={styles.typeFilters}>
-            {renderFilterButton('all', 'Todas')}
+            {renderFilterButton('all', 'Todo')}
             {renderFilterButton('income', 'Ingresos')}
             {renderFilterButton('expense', 'Gastos')}
           </View>
 
-          {/* Category Filter - Simplified as buttons for now */}
           <View style={styles.categoryFilters}>
             <TouchableOpacity
               style={[
@@ -136,7 +137,7 @@ const TransactionsListScreen = ({
                 Todas las categorías
               </Text>
             </TouchableOpacity>
-            
+
             {categories.slice(0, 3).map(cat => (
               <TouchableOpacity
                 key={cat}
@@ -157,24 +158,22 @@ const TransactionsListScreen = ({
           </View>
         </View>
 
-        {/* Transactions List */}
+        {/* LISTA */}
         <View style={styles.listContainer}>
-          {filteredTransactions.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No hay transacciones</Text>
-            </View>
-          ) : (
-            <FlatList
-              data={filteredTransactions}
-              renderItem={renderTransaction}
-              keyExtractor={(item) => item.id}
-              contentContainerStyle={styles.listContent}
-              showsVerticalScrollIndicator={false}
-            />
-          )}
+          <FlatList
+            data={filteredTransactions}
+            keyExtractor={(item) => item.id}
+            renderItem={renderTransaction}
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={(
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No hay transacciones para mostrar.</Text>
+              </View>
+            )}
+          />
         </View>
 
-        {/* Add Button */}
+        {/* Botón agregar */}
         <TouchableOpacity
           style={styles.addButton}
           onPress={onAdd}
@@ -182,42 +181,44 @@ const TransactionsListScreen = ({
           <Text style={styles.addButtonText}>+ Agregar Transacción</Text>
         </TouchableOpacity>
 
-        {/* Bottom Navigation Placeholder */}
+        {/* Navegación inferior */}
         <View style={styles.bottomNavigation}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.navItem, activeTab === 'home' && styles.activeNavItem]}
             onPress={() => onTabChange('home')}
           >
             <Text style={[styles.navText, activeTab === 'home' && styles.activeNavText]}>Inicio</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={[styles.navItem, activeTab === 'balance' && styles.activeNavItem]}
             onPress={() => onTabChange('balance')}
           >
             <Text style={[styles.navText, activeTab === 'balance' && styles.activeNavText]}>Balance</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={[styles.navItem, activeTab === 'transactions' && styles.activeNavItem]}
             onPress={() => onTabChange('transactions')}
           >
             <Text style={[styles.navText, activeTab === 'transactions' && styles.activeNavText]}>Transacciones</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={[styles.navItem, activeTab === 'user' && styles.activeNavItem]}
             onPress={() => onTabChange('user')}
           >
             <Text style={[styles.navText, activeTab === 'user' && styles.activeNavText]}>Usuario</Text>
           </TouchableOpacity>
         </View>
+
       </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+
   container: {
     flex: 1,
     backgroundColor: '#2a2a2a',
@@ -225,6 +226,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
   },
+
   screenContainer: {
     backgroundColor: '#3a3a3a',
     borderRadius: 24,
@@ -233,83 +235,54 @@ const styles = StyleSheet.create({
     maxWidth: 400,
     height: 700,
   },
+
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 24,
   },
-  titleText: {
-    color: 'white',
-    fontSize: 20,
-    fontWeight: '600',
-  },
-  helpText: {
-    color: '#9ca3af',
-    fontSize: 16,
-  },
-  filtersContainer: {
-    marginBottom: 24,
-  },
-  typeFilters: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 12,
-  },
+
+  titleText: { color: 'white', fontSize: 20, fontWeight: '600' },
+  helpText: { color: '#9ca3af', fontSize: 16 },
+
+  filtersContainer: { marginBottom: 24 },
+  typeFilters: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+
   filterButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
     backgroundColor: '#6b7280',
   },
-  activeFilterButton: {
-    backgroundColor: 'white',
-  },
-  filterButtonText: {
-    color: '#d1d5db',
-    fontSize: 14,
-  },
-  activeFilterButtonText: {
-    color: '#374151',
-  },
-  categoryFilters: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
+  activeFilterButton: { backgroundColor: 'white' },
+
+  filterButtonText: { color: '#d1d5db', fontSize: 14 },
+  activeFilterButtonText: { color: '#374151' },
+
+  categoryFilters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   categoryButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
     backgroundColor: '#6b7280',
   },
-  activeCategoryButton: {
-    backgroundColor: '#9ca3af',
-  },
-  categoryButtonText: {
-    color: '#d1d5db',
-    fontSize: 12,
-  },
-  activeCategoryButtonText: {
-    color: '#374151',
-  },
-  listContainer: {
-    flex: 1,
-    marginBottom: 16,
-  },
-  listContent: {
-    gap: 12,
-  },
+  activeCategoryButton: { backgroundColor: '#9ca3af' },
+
+  categoryButtonText: { color: '#d1d5db', fontSize: 12 },
+  activeCategoryButtonText: { color: '#374151' },
+
+  listContainer: { flex: 1, marginBottom: 16 },
+  listContent: { gap: 12 },
+
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 48,
   },
-  emptyText: {
-    color: '#9ca3af',
-    fontSize: 16,
-  },
+  emptyText: { color: '#9ca3af', fontSize: 16 },
+
   transactionItem: {
     backgroundColor: '#6b7280',
     borderRadius: 12,
@@ -318,69 +291,26 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  transactionContent: {
+
+  leftSection: {
     flex: 1,
   },
-  transactionHeader: {
+
+  rightSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
+    gap: 12,
+    minWidth: 120, // ✅ ESTO FIJA EL ANCHO Y ALINEA TODO
+    justifyContent: 'flex-end',
   },
-  transactionCategory: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  typeBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 12,
-  },
-  incomeBadge: {
-    backgroundColor: '#16a34a',
-  },
-  expenseBadge: {
-    backgroundColor: '#dc2626',
-  },
-  typeBadgeText: {
-    color: 'white',
-    fontSize: 10,
-    fontWeight: '500',
-  },
-  transactionDescription: {
-    color: '#9ca3af',
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  transactionDate: {
-    color: '#6b7280',
-    fontSize: 12,
-  },
-  transactionActions: {
-    alignItems: 'flex-end',
-  },
-  transactionAmount: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  incomeAmount: {
-    color: '#22c55e',
-  },
-  expenseAmount: {
-    color: '#ef4444',
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  actionButton: {
-    padding: 8,
-  },
-  actionButtonText: {
-    fontSize: 16,
-  },
+
+  transactionText: { color: 'white', fontSize: 16, fontWeight: '600' },
+  transactionCategory: { color: '#d1d5db', fontSize: 13 },
+  transactionDate: { color: '#9ca3af', fontSize: 12 },
+  transactionAmount: { fontSize: 16, fontWeight: 'bold' },
+  incomeAmount: { color: '#22c55e' },
+  expenseAmount: { color: '#ef4444' },
+
   addButton: {
     backgroundColor: 'white',
     paddingVertical: 16,
@@ -388,11 +318,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  addButtonText: {
-    color: '#374151',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  addButtonText: { color: '#374151', fontSize: 16, fontWeight: '600' },
+
   bottomNavigation: {
     flexDirection: 'row',
     backgroundColor: '#4b5563',
@@ -401,6 +328,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     gap: 8,
   },
+
   navItem: {
     flex: 1,
     alignItems: 'center',
@@ -408,17 +336,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     borderRadius: 12,
   },
-  activeNavItem: {
-    backgroundColor: '#6b7280',
-  },
-  navText: {
-    fontSize: 12,
-    color: '#d1d5db',
-    textAlign: 'center',
-  },
-  activeNavText: {
-    color: 'white',
-  },
+
+  activeNavItem: { backgroundColor: '#6b7280' },
+
+  navText: { fontSize: 12, color: '#d1d5db', textAlign: 'center' },
+  activeNavText: { color: 'white' },
 });
 
 export default TransactionsListScreen;
