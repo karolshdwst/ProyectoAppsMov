@@ -26,3 +26,5 @@ Layout: Diseño en tarjetas con bordes redondeados
 Gestión de Estado
 Estado local con useState en cada componente
 Props drilling para comunicación entre componentes
+
+aaaa
