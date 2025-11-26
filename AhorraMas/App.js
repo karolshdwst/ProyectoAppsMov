@@ -6,7 +6,7 @@ export default function App() {
   return (
     <View style={styles.container}>
       <AppNavigator />
-      <StatusBar style="auto"/>
+      <StatusBar style="auto" />
     </View>
   );
 }
