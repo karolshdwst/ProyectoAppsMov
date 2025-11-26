@@ -5,15 +5,17 @@ import {
   TouchableOpacity,
   Image,
   StyleSheet,
-  SafeAreaView,
   Dimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 
 const cerdo = require('../../assets/cerdo.png');
 
 const { width, height } = Dimensions.get('window');
 
-const WelcomeScreen = ({ onNavigate }) => {
+const WelcomeScreen = () => {
+  const navigation = useNavigation();
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.screenContainer}>
@@ -30,7 +32,7 @@ const WelcomeScreen = ({ onNavigate }) => {
           <View style={styles.logoContainer}>
             <Text style={styles.logoText}>Ahorra+</Text>
           </View>
-          
+
           {/* Piggy Bank Illustration Placeholder */}
           <View style={styles.illustrationContainer}>
             <View style={styles.piggyBankPlaceholder}>
@@ -48,7 +50,7 @@ const WelcomeScreen = ({ onNavigate }) => {
                 Empieza a trazar tu camino hacia ese viaje
               </Text>
             </View>
-            
+
             <View style={styles.infoBubble}>
               <View style={styles.iconContainer}>
                 <Text style={styles.iconEmoji}>📊</Text>
@@ -57,7 +59,7 @@ const WelcomeScreen = ({ onNavigate }) => {
                 Una idea clara tranquilidad en tanto ahorras
               </Text>
             </View>
-            
+
             <View style={styles.infoBubble}>
               <View style={styles.iconContainer}>
                 <Text style={styles.iconEmoji}>🏠</Text>
@@ -73,14 +75,14 @@ const WelcomeScreen = ({ onNavigate }) => {
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={styles.primaryButton}
-            onPress={() => onNavigate('register')}
+            onPress={() => navigation.navigate('Registro')}
           >
             <Text style={styles.primaryButtonText}>Register</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={styles.primaryButton}
-            onPress={() => onNavigate('login')}
+            onPress={() => navigation.navigate('Login')}
           >
             <Text style={styles.primaryButtonText}>Login</Text>
           </TouchableOpacity>

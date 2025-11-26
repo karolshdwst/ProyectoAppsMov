@@ -5,23 +5,30 @@ import {
     TouchableOpacity,
     TextInput,
     StyleSheet,
-    SafeAreaView,
+    Alert,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
     Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 
 const cerdo = require('../../assets/cerdo.png');
 
-const ForgotPasswordScreen = ({ onNavigate }) => {
+const ForgotPasswordScreen = () => {
+    const navigation = useNavigation();
     const [email, setEmail] = useState('');
 
     const handleSubmit = () => {
         // Logic to send password reset email
-        console.log('Password reset for:', email);
-        // For now, just navigate back to login
-        onNavigate('login');
+        Alert.alert(
+            'Correo Enviado',
+            'Se ha enviado un correo para recuperar tu contraseña',
+            [
+                { text: 'OK', onPress: () => navigation.navigate('Login') }
+            ]
+        );
     };
 
     return (
@@ -38,7 +45,7 @@ const ForgotPasswordScreen = ({ onNavigate }) => {
                         {/* Header */}
                         <View style={styles.header}>
                             <Text style={styles.titleText}>Recuperar Contraseña</Text>
-                            <TouchableOpacity onPress={() => onNavigate('login')}>
+                            <TouchableOpacity onPress={() => navigation.goBack()}>
                                 <Text style={styles.helpText}>Cancelar</Text>
                             </TouchableOpacity>
                         </View>
@@ -83,7 +90,7 @@ const ForgotPasswordScreen = ({ onNavigate }) => {
 
                                 <View style={styles.registerContainer}>
                                     <Text style={styles.registerText}>¿Recuerdas tu contraseña? </Text>
-                                    <TouchableOpacity onPress={() => onNavigate('login')}>
+                                    <TouchableOpacity onPress={() => navigation.navigate('Login')}>
                                         <Text style={styles.registerLink}>Inicia Sesión</Text>
                                     </TouchableOpacity>
                                 </View>

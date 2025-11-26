@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   TextInput,
   StyleSheet,
-  SafeAreaView,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -13,27 +12,36 @@ import {
   Image,
   ImageBackground,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 
 const cerdo = require('../../assets/cerdo.png');
 
-const RegisterScreen = ({ onRegister, onNavigate }) => {
+const RegisterScreen = () => {
+  const navigation = useNavigation();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
 
   const handleSubmit = () => {
-    // Sin validaciones, ir directo al login
-    onRegister();
+    // Sin validaciones, mostrar alerta y navegar al login
+    Alert.alert(
+      'Registro Exitoso',
+      'Tu cuenta ha sido creada exitosamente',
+      [
+        { text: 'OK', onPress: () => navigation.navigate('Login') }
+      ]
+    );
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardContainer}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
         >
@@ -73,7 +81,7 @@ const RegisterScreen = ({ onRegister, onNavigate }) => {
                   autoCapitalize="words"
                   autoCorrect={false}
                 />
-                
+
                 <TextInput
                   style={styles.input}
                   value={email}
@@ -84,7 +92,7 @@ const RegisterScreen = ({ onRegister, onNavigate }) => {
                   autoCapitalize="none"
                   autoCorrect={false}
                 />
-                
+
                 <TextInput
                   style={styles.input}
                   value={password}
@@ -94,7 +102,7 @@ const RegisterScreen = ({ onRegister, onNavigate }) => {
                   secureTextEntry
                   autoCapitalize="none"
                 />
-                
+
                 <TextInput
                   style={styles.input}
                   value={phone}
@@ -113,15 +121,15 @@ const RegisterScreen = ({ onRegister, onNavigate }) => {
                 >
                   <Text style={styles.submitButtonText}>Registrarse</Text>
                 </TouchableOpacity>
-                
+
                 <View style={styles.loginContainer}>
                   <Text style={styles.loginText}>¿Ya tienes cuenta? </Text>
                   {/* link para mandarte a otra screen */}
 
-                  <TouchableOpacity onPress={() => onNavigate('login')}>
+                  <TouchableOpacity onPress={() => navigation.navigate('Login')}>
                     <Text style={styles.loginLink}>Inicia sesión</Text>
                   </TouchableOpacity>
-                  
+
                 </View>
               </View>
 
@@ -265,7 +273,7 @@ const styles = StyleSheet.create({
   },
   termsLink: {
     color: '#9ca3af',
-  },piggyBankImage: {
+  }, piggyBankImage: {
     width: 80,
     height: 80,
     resizeMode: 'contain',

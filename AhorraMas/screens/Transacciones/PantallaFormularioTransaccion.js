@@ -5,12 +5,13 @@ import {
   TouchableOpacity,
   TextInput,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 
 const categories = [
   'Salary',
@@ -24,7 +25,8 @@ const categories = [
   'Otros'
 ];
 
-const TransactionFormScreen = ({ transaction, onSave, onCancel }) => {
+const TransactionFormScreen = ({ transaction }) => {
+  const navigation = useNavigation();
   const [amount, setAmount] = useState(transaction?.amount.toString() || '');
   const [type, setType] = useState(transaction?.type || 'income');
   const [category, setCategory] = useState(transaction?.category || categories[0]);
@@ -43,19 +45,13 @@ const TransactionFormScreen = ({ transaction, onSave, onCancel }) => {
 
   const handleSubmit = () => {
     if (amount && category && date) {
-      const transactionData = {
-        amount: parseFloat(amount),
-        type,
-        category,
-        date,
-        description
-      };
-
-      if (transaction) {
-        onSave({ ...transactionData, id: transaction.id });
-      } else {
-        onSave(transactionData);
-      }
+      Alert.alert(
+        'Éxito',
+        'Transacción guardada exitosamente',
+        [
+          { text: 'OK', onPress: () => navigation.goBack() }
+        ]
+      );
     } else {
       Alert.alert(
         'Error',
@@ -72,11 +68,11 @@ const TransactionFormScreen = ({ transaction, onSave, onCancel }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardContainer}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
         >
@@ -86,7 +82,7 @@ const TransactionFormScreen = ({ transaction, onSave, onCancel }) => {
               <Text style={styles.titleText}>
                 {transaction ? 'Editar Transacción' : 'Nueva Transacción'}
               </Text>
-              <TouchableOpacity onPress={onCancel}>
+              <TouchableOpacity onPress={() => navigation.goBack()}>
                 <Text style={styles.cancelText}>Cancelar</Text>
               </TouchableOpacity>
             </View>
@@ -127,7 +123,7 @@ const TransactionFormScreen = ({ transaction, onSave, onCancel }) => {
                       Ingreso
                     </Text>
                   </TouchableOpacity>
-                  
+
                   <TouchableOpacity
                     style={[
                       styles.typeButton,

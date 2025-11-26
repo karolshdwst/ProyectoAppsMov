@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   TextInput,
   StyleSheet,
-  SafeAreaView,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -13,25 +12,28 @@ import {
   ImageBackground,
   Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 
 const cerdo = require('../../assets/cerdo.png');
 
-const LoginScreen = ({ onLogin, onNavigate }) => {
+const LoginScreen = () => {
+  const navigation = useNavigation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleSubmit = () => {
     // Sin validaciones, ir directo a la pantalla principal
-    onLogin();
+    navigation.navigate('MainTabs');
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardContainer}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
         >
@@ -71,7 +73,7 @@ const LoginScreen = ({ onLogin, onNavigate }) => {
                   autoCapitalize="none"
                   autoCorrect={false}
                 />
-                
+
                 <TextInput
                   style={styles.input}
                   value={password}
@@ -85,7 +87,7 @@ const LoginScreen = ({ onLogin, onNavigate }) => {
 
               {/* Forgot Password */}
               <View style={styles.forgotPasswordContainer}>
-                <TouchableOpacity onPress={() => onNavigate('forgot-password')}>
+                <TouchableOpacity onPress={() => navigation.navigate('OlvidarContrasenna')}>
                   <Text style={styles.forgotPasswordText}>
                     ¿Olvidaste tu contraseña?
                   </Text>
@@ -100,10 +102,10 @@ const LoginScreen = ({ onLogin, onNavigate }) => {
                 >
                   <Text style={styles.submitButtonText}>Iniciar Sesión</Text>
                 </TouchableOpacity>
-                
+
                 <View style={styles.registerContainer}>
                   <Text style={styles.registerText}>¿No tienes cuenta? </Text>
-                  <TouchableOpacity onPress={() => onNavigate('register')}>
+                  <TouchableOpacity onPress={() => navigation.navigate('Registro')}>
                     <Text style={styles.registerLink}>Regístrate</Text>
                   </TouchableOpacity>
                 </View>

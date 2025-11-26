@@ -4,19 +4,16 @@ import {
     Text,
     TouchableOpacity,
     StyleSheet,
-    SafeAreaView,
     ScrollView,
     Dimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
 const DashboardScreen = ({
     transactions = [],
     budgets = [],
-    activeTab,
-    onTabChange,
-    onNavigate
 }) => {
     const totalIncome = transactions
         .filter(t => t.type === 'income')
@@ -145,37 +142,6 @@ const DashboardScreen = ({
                         </View>
                     </View>
                 </ScrollView>
-
-                {/* Bottom Navigation Placeholder */}
-                <View style={styles.bottomNavigation}>
-                    <TouchableOpacity
-                        style={[styles.navItem, activeTab === 'home' && styles.activeNavItem]}
-                        onPress={() => onTabChange('home')}
-                    >
-                        <Text style={[styles.navText, activeTab === 'home' && styles.activeNavText]}>Inicio</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[styles.navItem, activeTab === 'balance' && styles.activeNavItem]}
-                        onPress={() => onTabChange('balance')}
-                    >
-                        <Text style={[styles.navText, activeTab === 'balance' && styles.activeNavText]}>Balance</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[styles.navItem, activeTab === 'transactions' && styles.activeNavItem]}
-                        onPress={() => onTabChange('transactions')}
-                    >
-                        <Text style={[styles.navText, activeTab === 'transactions' && styles.activeNavText]}>Transacciones</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[styles.navItem, activeTab === 'user' && styles.activeNavItem]}
-                        onPress={() => onTabChange('user')}
-                    >
-                        <Text style={[styles.navText, activeTab === 'user' && styles.activeNavText]}>Usuario</Text>
-                    </TouchableOpacity>
-                </View>
             </View>
         </SafeAreaView>
     );

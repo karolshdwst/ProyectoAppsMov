@@ -4,9 +4,9 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   FlatList,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const HistoryScreen = ({ transactions = [], activeTab, onTabChange }) => {
   // Group transactions by date

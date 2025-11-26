@@ -4,14 +4,14 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   Dimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
-const StatisticsScreen = ({ transactions = [], activeTab, onTabChange }) => {
+const StatisticsScreen = ({ transactions = [] }) => {
   // Calculate expenses by category
   const expensesByCategory = transactions
     .filter(t => t.type === 'expense')
@@ -26,12 +26,12 @@ const StatisticsScreen = ({ transactions = [], activeTab, onTabChange }) => {
 
   const renderCategoryItem = ([category, amount], index) => {
     const percentage = totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0;
-    
+
     return (
       <View key={category} style={styles.categoryItem}>
         <View style={styles.categoryHeader}>
           <View style={styles.categoryLabelContainer}>
-            <View 
+            <View
               style={[
                 styles.categoryColorIndicator,
                 { backgroundColor: colors[index % colors.length] }
@@ -42,10 +42,10 @@ const StatisticsScreen = ({ transactions = [], activeTab, onTabChange }) => {
           <Text style={styles.categoryAmount}>${amount.toFixed(0)}</Text>
         </View>
         <View style={styles.categoryProgressContainer}>
-          <View 
+          <View
             style={[
               styles.categoryProgress,
-              { 
+              {
                 width: `${percentage}%`,
                 backgroundColor: colors[index % colors.length]
               }
@@ -59,7 +59,7 @@ const StatisticsScreen = ({ transactions = [], activeTab, onTabChange }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.screenContainer}>
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
         >
@@ -81,7 +81,7 @@ const StatisticsScreen = ({ transactions = [], activeTab, onTabChange }) => {
           {/* Monthly Savings Chart */}
           <View style={styles.chartCard}>
             <Text style={styles.chartTitle}>Ahorros Mensuales</Text>
-            
+
             {/* Chart Placeholder */}
             {totalExpenses > 0 ? (
               <View style={styles.chartContainer}>
@@ -115,37 +115,6 @@ const StatisticsScreen = ({ transactions = [], activeTab, onTabChange }) => {
             <Text style={styles.simulateButtonText}>Simular gastos</Text>
           </TouchableOpacity>
         </ScrollView>
-
-        {/* Bottom Navigation Placeholder */}
-        <View style={styles.bottomNavigation}>
-          <TouchableOpacity 
-            style={[styles.navItem, activeTab === 'home' && styles.activeNavItem]}
-            onPress={() => onTabChange('home')}
-          >
-            <Text style={[styles.navText, activeTab === 'home' && styles.activeNavText]}>Inicio</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.navItem, activeTab === 'balance' && styles.activeNavItem]}
-            onPress={() => onTabChange('balance')}
-          >
-            <Text style={[styles.navText, activeTab === 'balance' && styles.activeNavText]}>Balance</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.navItem, activeTab === 'transactions' && styles.activeNavItem]}
-            onPress={() => onTabChange('transactions')}
-          >
-            <Text style={[styles.navText, activeTab === 'transactions' && styles.activeNavText]}>Transacciones</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.navItem, activeTab === 'user' && styles.activeNavItem]}
-            onPress={() => onTabChange('user')}
-          >
-            <Text style={[styles.navText, activeTab === 'user' && styles.activeNavText]}>Usuario</Text>
-          </TouchableOpacity>
-        </View>
       </View>
     </SafeAreaView>
   );

@@ -4,24 +4,23 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   FlatList,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 
-const TransactionsListScreen = ({ 
-  transactions = [], 
-  onDelete, 
-  onEdit, 
-  onAdd,
-  activeTab,
-  onTabChange 
+const TransactionsListScreen = ({
+  transactions = [],
+  onDelete,
+  onEdit
 }) => {
+  const navigation = useNavigation();
   const [filterType, setFilterType] = useState('all');
   const [filterCategory, setFilterCategory] = useState('all');
 
   const categories = Array.from(new Set(transactions.map(t => t.category)));
-  
+
   const filteredTransactions = transactions.filter(t => {
     if (filterType !== 'all' && t.type !== filterType) return false;
     if (filterCategory !== 'all' && t.category !== filterCategory) return false;
@@ -56,7 +55,7 @@ const TransactionsListScreen = ({
         <Text style={styles.transactionDescription}>{transaction.description}</Text>
         <Text style={styles.transactionDate}>{transaction.date}</Text>
       </View>
-      
+
       <View style={styles.transactionActions}>
         <Text style={[
           styles.transactionAmount,
@@ -64,7 +63,7 @@ const TransactionsListScreen = ({
         ]}>
           {transaction.type === 'income' ? '+' : '-'}${transaction.amount}
         </Text>
-        
+
         <View style={styles.actionButtons}>
           <TouchableOpacity
             style={styles.actionButton}
@@ -72,7 +71,7 @@ const TransactionsListScreen = ({
           >
             <Text style={styles.actionButtonText}>✏️</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => handleDelete(transaction.id)}
@@ -136,7 +135,7 @@ const TransactionsListScreen = ({
                 Todas las categorías
               </Text>
             </TouchableOpacity>
-            
+
             {categories.slice(0, 3).map(cat => (
               <TouchableOpacity
                 key={cat}
@@ -177,41 +176,10 @@ const TransactionsListScreen = ({
         {/* Add Button */}
         <TouchableOpacity
           style={styles.addButton}
-          onPress={onAdd}
+          onPress={() => navigation.navigate('FormularioTransaccion')}
         >
           <Text style={styles.addButtonText}>+ Agregar Transacción</Text>
         </TouchableOpacity>
-
-        {/* Bottom Navigation Placeholder */}
-        <View style={styles.bottomNavigation}>
-          <TouchableOpacity 
-            style={[styles.navItem, activeTab === 'home' && styles.activeNavItem]}
-            onPress={() => onTabChange('home')}
-          >
-            <Text style={[styles.navText, activeTab === 'home' && styles.activeNavText]}>Inicio</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.navItem, activeTab === 'balance' && styles.activeNavItem]}
-            onPress={() => onTabChange('balance')}
-          >
-            <Text style={[styles.navText, activeTab === 'balance' && styles.activeNavText]}>Balance</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.navItem, activeTab === 'transactions' && styles.activeNavItem]}
-            onPress={() => onTabChange('transactions')}
-          >
-            <Text style={[styles.navText, activeTab === 'transactions' && styles.activeNavText]}>Transacciones</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.navItem, activeTab === 'user' && styles.activeNavItem]}
-            onPress={() => onTabChange('user')}
-          >
-            <Text style={[styles.navText, activeTab === 'user' && styles.activeNavText]}>Usuario</Text>
-          </TouchableOpacity>
-        </View>
       </View>
     </SafeAreaView>
   );

@@ -6,34 +6,52 @@ import {
   StyleSheet,
 } from 'react-native';
 
-const BottomNavigation = ({ activeTab, onTabChange }) => {
+const BottomNavigation = ({ state, descriptors, navigation }) => {
   const tabs = [
-    { id: 'home', icon: 'Inicio', label: 'Inicio' },
-    { id: 'balance', icon: 'Balance', label: 'Balance' },
-    { id: 'transactions', icon: 'Transacciones', label: 'Transacciones' },
-    { id: 'user', icon: 'Usuario', label: 'Usuario' },
+    { id: 'Inicio', icon: 'Inicio', label: 'Inicio' },
+    { id: 'Balance', icon: 'Balance', label: 'Balance' },
+    { id: 'Transacciones', icon: 'Transacciones', label: 'Transacciones' },
+    { id: 'Usuario', icon: 'Usuario', label: 'Usuario' },
   ];
 
   return (
     <View style={styles.container}>
-      {tabs.map((tab) => (
-        <TouchableOpacity
-          key={tab.id}
-          style={[
-            styles.tabItem,
-            activeTab === tab.id && styles.activeTabItem
-          ]}
-          onPress={() => onTabChange(tab.id)}
-        >
-          <Text style={styles.tabIcon}>{tab.icon}</Text>
-          <Text style={[
-            styles.tabLabel,
-            activeTab === tab.id && styles.activeTabLabel
-          ]}>
-            {tab.label}
-          </Text>
-        </TouchableOpacity>
-      ))}
+      {state.routes.map((route, index) => {
+        const { options } = descriptors[route.key];
+        const label = options.tabBarLabel !== undefined
+          ? options.tabBarLabel
+          : options.title !== undefined
+            ? options.title
+            : route.name;
+
+        const isFocused = state.index === index;
+        const tab = tabs.find(t => t.id === route.name) || tabs[index];
+
+        const onPress = () => {
+          if (!isFocused) {
+            navigation.navigate(route.name);
+          }
+        };
+
+        return (
+          <TouchableOpacity
+            key={route.key}
+            style={[
+              styles.tabItem,
+              isFocused && styles.activeTabItem
+            ]}
+            onPress={onPress}
+          >
+            <Text style={styles.tabIcon}>{tab.icon}</Text>
+            <Text style={[
+              styles.tabLabel,
+              isFocused && styles.activeTabLabel
+            ]}>
+              {label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 };
@@ -45,6 +63,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingVertical: 8,
     paddingHorizontal: 4,
+    marginHorizontal: 16,
+    marginBottom: 16,
   },
   tabItem: {
     flex: 1,

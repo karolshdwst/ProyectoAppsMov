@@ -4,13 +4,15 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TextInput,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 
-const PantallaPresupuesto = ({ presupuestos = [], onUpdateBudget, onLogout, activeTab, onTabChange }) => {
+const PantallaPresupuesto = ({ presupuestos = [], onUpdateBudget }) => {
+  const navigation = useNavigation();
   const [presupuestoEditando, setPresupuestoEditando] = useState(null);
   const [nuevoLimite, setNuevoLimite] = useState('');
 
@@ -20,7 +22,14 @@ const PantallaPresupuesto = ({ presupuestos = [], onUpdateBudget, onLogout, acti
       '¿Estás seguro de que quieres cerrar sesión?',
       [
         { text: 'Cancelar', style: 'cancel' },
-        { text: 'Cerrar Sesión', style: 'destructive', onPress: onLogout }
+        {
+          text: 'Cerrar Sesión',
+          style: 'destructive',
+          onPress: () => navigation.reset({
+            index: 0,
+            routes: [{ name: 'Bienvenida' }],
+          })
+        }
       ]
     );
   };
@@ -44,7 +53,7 @@ const PantallaPresupuesto = ({ presupuestos = [], onUpdateBudget, onLogout, acti
   return (
     <SafeAreaView style={styles.contenedorPrincipal}>
       <View style={styles.contenedorPantalla}>
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContenido}
           showsVerticalScrollIndicator={false}
         >
@@ -76,58 +85,27 @@ const PantallaPresupuesto = ({ presupuestos = [], onUpdateBudget, onLogout, acti
             )}
           </View>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.botonAgregarCategoria}
             onPress={manejarAgregarCategoria}
           >
             <Text style={styles.textoAgregarCategoria}>+ Agregar Categoría</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.botonConfiguracion}
             onPress={manejarConfiguración}
           >
             <Text style={styles.textoConfiguracion}>Configuración</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.botonCerrarSesion} 
+          <TouchableOpacity
+            style={styles.botonCerrarSesion}
             onPress={manejarCerrarSesion}
           >
             <Text style={styles.textoCerrarSesion}>Cerrar Sesión</Text>
           </TouchableOpacity>
         </ScrollView>
-
-        {/* Navegación inferior */}
-        <View style={styles.navegacionInferior}>
-          <TouchableOpacity 
-            style={[styles.itemNavegacion, activeTab === 'home' && styles.itemActivo]}
-            onPress={() => onTabChange('home')}
-          >
-            <Text style={[styles.textoNav, activeTab === 'home' && styles.textoNavActivo]}>Inicio</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.itemNavegacion, activeTab === 'balance' && styles.itemActivo]}
-            onPress={() => onTabChange('balance')}
-          >
-            <Text style={[styles.textoNav, activeTab === 'balance' && styles.textoNavActivo]}>Balance</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.itemNavegacion, activeTab === 'transactions' && styles.itemActivo]}
-            onPress={() => onTabChange('transactions')}
-          >
-            <Text style={[styles.textoNav, activeTab === 'transactions' && styles.textoNavActivo]}>Transacciones</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.itemNavegacion, activeTab === 'user' && styles.itemActivo]}
-            onPress={() => onTabChange('user')}
-          >
-            <Text style={[styles.textoNav, activeTab === 'user' && styles.textoNavActivo]}>Usuario</Text>
-          </TouchableOpacity>
-        </View>
       </View>
     </SafeAreaView>
   );
