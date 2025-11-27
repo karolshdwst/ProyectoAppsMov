@@ -34,12 +34,12 @@ const StackNavigator = () => {
                 component={OlvidasteContrasenna}
             />
             <Stack.Screen
-                name="MainTabs"
-                component={TabNavigator}
-            />
-            <Stack.Screen
                 name="FormularioTransaccion"
                 component={PantallaFormularioTransaccion}
+            />
+            <Stack.Screen
+                name="Main"
+                component={TabNavigator}
             />
         </Stack.Navigator>
     );

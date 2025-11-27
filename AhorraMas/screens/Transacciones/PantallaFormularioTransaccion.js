@@ -236,9 +236,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#3a3a3a',
     borderRadius: 24,
     padding: 32,
-    width: '100%',
-    maxWidth: 400,
-    minHeight: 700,
+    width: '100%'
   },
   header: {
     flexDirection: 'row',
