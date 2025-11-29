@@ -8,6 +8,7 @@ import {
     Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 
@@ -15,6 +16,7 @@ const DashboardScreen = ({
     transactions = [],
     budgets = [],
 }) => {
+    const navigation = useNavigation();
     const totalIncome = transactions
         .filter(t => t.type === 'income')
         .reduce((sum, t) => sum + t.amount, 0);
@@ -63,8 +65,8 @@ const DashboardScreen = ({
                     {/* Header */}
                     <View style={styles.header}>
                         <Text style={styles.titleText}>Inicio</Text>
-                        <TouchableOpacity>
-                            <Text style={styles.helpText}>Ayuda</Text>
+                        <TouchableOpacity onPress={() => navigation.navigate('MiCuenta')}>
+                            <Text style={styles.helpText}>Mi Cuenta</Text>
                         </TouchableOpacity>
                     </View>
 

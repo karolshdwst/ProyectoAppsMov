@@ -57,6 +57,14 @@ const PantallaPresupuesto = ({ presupuestos = [], onUpdateBudget }) => {
           contentContainerStyle={styles.scrollContenido}
           showsVerticalScrollIndicator={false}
         >
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.titleText}>Presupuestos</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('MiCuenta')}>
+              <Text style={styles.helpText}>Mi Cuenta</Text>
+            </TouchableOpacity>
+          </View>
+
           {/* Tarjeta Usuario */}
           <View style={styles.tarjetaUsuario}>
             <View style={styles.avatarUsuario}>
@@ -130,6 +138,21 @@ const styles = StyleSheet.create({
   },
   scrollContenido: {
     paddingBottom: 80,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 24,
+  },
+  titleText: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: '600',
+  },
+  helpText: {
+    color: '#9ca3af',
+    fontSize: 16,
   },
   tarjetaUsuario: {
     flexDirection: 'row',

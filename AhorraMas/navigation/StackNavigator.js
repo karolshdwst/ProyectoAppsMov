@@ -5,6 +5,7 @@ import PantallaLogin from '../screens/Autenticacion/PantallaLogin';
 import PantallaRegistro from '../screens/Autenticacion/PantallaRegistro';
 import OlvidasteContrasenna from '../screens/Autenticacion/OlvidasteContrasenna';
 import PantallaFormularioTransaccion from '../screens/Transacciones/PantallaFormularioTransaccion';
+import PantallaMiCuenta from '../screens/Configuracion/PantallaMiCuenta';
 import TabNavigator from './TabNavigator';
 
 const Stack = createNativeStackNavigator();
@@ -40,6 +41,10 @@ const StackNavigator = () => {
             <Stack.Screen
                 name="Main"
                 component={TabNavigator}
+            />
+            <Stack.Screen
+                name="MiCuenta"
+                component={PantallaMiCuenta}
             />
         </Stack.Navigator>
     );

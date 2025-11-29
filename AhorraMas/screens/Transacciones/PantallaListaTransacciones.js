@@ -106,8 +106,8 @@ const TransactionsListScreen = ({
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.titleText}>Transacciones</Text>
-          <TouchableOpacity>
-            <Text style={styles.helpText}>Ayuda</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('MiCuenta')}>
+            <Text style={styles.helpText}>Mi Cuenta</Text>
           </TouchableOpacity>
         </View>
 

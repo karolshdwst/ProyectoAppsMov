@@ -8,10 +8,12 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 
 const StatisticsScreen = ({ transactions = [] }) => {
+  const navigation = useNavigation();
   // Calculate expenses by category
   const expensesByCategory = transactions
     .filter(t => t.type === 'expense')
@@ -66,8 +68,8 @@ const StatisticsScreen = ({ transactions = [] }) => {
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.titleText}>Estadísticas</Text>
-            <TouchableOpacity>
-              <Text style={styles.helpText}>Ayuda</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('MiCuenta')}>
+              <Text style={styles.helpText}>Mi Cuenta</Text>
             </TouchableOpacity>
           </View>
 
