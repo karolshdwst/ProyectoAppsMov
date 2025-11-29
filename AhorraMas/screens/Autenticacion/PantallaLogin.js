@@ -11,9 +11,11 @@ import {
   ScrollView,
   ImageBackground,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import DatabaseService from '../../database/DatabaseService';
 
 const cerdo = require('../../assets/cerdo.png');
 
@@ -21,10 +23,46 @@ const LoginScreen = () => {
   const navigation = useNavigation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = () => {
-    // Sin validaciones, ir directo a la pantalla principal
-    navigation.navigate('MainTabs');
+  const handleSubmit = async () => {
+    // Validaciones básicas
+    if (!email.trim() || !password.trim()) {
+      Alert.alert('Error', 'Por favor completa todos los campos');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Intentar login con la base de datos
+      const usuario = await DatabaseService.loginUsuario(email.trim(), password);
+      
+      // Guardar sesión
+      await DatabaseService.guardarSesion(usuario);
+
+      // Verificar si debe cambiar contraseña
+      if (usuario.debe_cambiar_password === 1) {
+        Alert.alert(
+          'Cambio de contraseña requerido',
+          'Por seguridad, debes cambiar tu contraseña temporal.',
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.navigate('CambiarContrasena', { usuarioId: usuario.id })
+            }
+          ]
+        );
+      } else {
+        // Login exitoso - ir a pantalla principal
+        navigation.replace('Main');
+      }
+
+    } catch (error) {
+      Alert.alert('Error de inicio de sesión', error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -97,10 +135,15 @@ const LoginScreen = () => {
               {/* Submit Button */}
               <View style={styles.submitContainer}>
                 <TouchableOpacity
-                  style={styles.submitButton}
-                  onPress={() => navigation.navigate('Main')}
+                  style={[styles.submitButton, loading && styles.submitButtonDisabled]}
+                  onPress={handleSubmit}
+                  disabled={loading}
                 >
-                  <Text style={styles.submitButtonText}>Iniciar Sesión</Text>
+                  {loading ? (
+                    <ActivityIndicator color="#374151" />
+                  ) : (
+                    <Text style={styles.submitButtonText}>Iniciar Sesión</Text>
+                  )}
                 </TouchableOpacity>
 
                 <View style={styles.registerContainer}>
@@ -218,6 +261,9 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     alignItems: 'center',
     marginBottom: 16,
+  },
+  submitButtonDisabled: {
+    opacity: 0.6,
   },
   submitButtonText: {
     color: '#374151',

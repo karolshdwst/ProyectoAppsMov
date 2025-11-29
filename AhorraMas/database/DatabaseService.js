@@ -50,7 +50,11 @@ class DatabaseService {
                 contrasena TEXT NOT NULL,
                 telefono TEXT NOT NULL,
                 balanceTotal REAL DEFAULT 0,
-                fechaRegistro DATETIME DEFAULT CURRENT_TIMESTAMP
+                fechaRegistro DATETIME DEFAULT CURRENT_TIMESTAMP,
+                debe_cambiar_password BOOLEAN DEFAULT 0,
+                ultimo_cambio_password DATETIME,
+                intentos_fallidos INTEGER DEFAULT 0,
+                bloqueado_hasta DATETIME NULL
             );
         `);
 
@@ -92,12 +96,67 @@ class DatabaseService {
             CREATE INDEX IF NOT EXISTS idx_presupuestos_usuario ON presupuestos(usuarioId);
         `);
 
+        // Crear usuario predeterminado si no existe
+        await this.crearUsuarioPredeterminado();
+
         console.log('Base de datos SQLite inicializada correctamente');
     }
 
     // =====================================================
     // FUNCIONES DE HASH PARA CONTRASEÑAS
     // =====================================================
+    
+    async crearUsuarioPredeterminado() {
+        if (Platform.OS === 'web') {
+            const usuarios = JSON.parse(localStorage.getItem(this.storageKeys.usuarios));
+            
+            // Verificar si ya existe el usuario predeterminado
+            if (!usuarios.find(u => u.correo === 'admin@ahorros.com')) {
+                const contrasenaHash = await this.hashPassword('admin123');
+                
+                const usuarioPredeterminado = {
+                    id: Date.now(),
+                    nombreCompleto: 'Usuario Administrador',
+                    correo: 'admin@ahorros.com',
+                    contrasena: contrasenaHash,
+                    telefono: '0000000000',
+                    balanceTotal: 0,
+                    fechaRegistro: new Date().toISOString(),
+                    debe_cambiar_password: 0,
+                    ultimo_cambio_password: new Date().toISOString(),
+                    intentos_fallidos: 0,
+                    bloqueado_hasta: null
+                };
+                
+                usuarios.push(usuarioPredeterminado);
+                localStorage.setItem(this.storageKeys.usuarios, JSON.stringify(usuarios));
+                console.log('Usuario predeterminado creado: admin@ahorros.com / admin123');
+            }
+        } else {
+            // Verificar si ya existe el usuario predeterminado
+            const usuarioExistente = await this.db.getFirstAsync(
+                'SELECT * FROM usuarios WHERE correo = ?;',
+                'admin@ahorros.com'
+            );
+            
+            if (!usuarioExistente) {
+                const contrasenaHash = await this.hashPassword('admin123');
+                
+                await this.db.runAsync(
+                    'INSERT INTO usuarios (nombreCompleto, correo, contrasena, telefono, debe_cambiar_password, ultimo_cambio_password) VALUES (?, ?, ?, ?, ?, ?);',
+                    'Usuario Administrador',
+                    'admin@ahorros.com',
+                    contrasenaHash,
+                    '0000000000',
+                    0,
+                    new Date().toISOString()
+                );
+                
+                console.log('Usuario predeterminado creado: admin@ahorros.com / admin123');
+            }
+        }
+    }
+    
     async hashPassword(password) {
         if (Platform.OS === 'web') {
             // En web, usamos un hash simple (en producción usa bcrypt o similar)
@@ -149,6 +208,18 @@ class DatabaseService {
 
     
     // CRUD USUARIOS
+    
+    async obtenerUsuarioPorEmail(correo) {
+        if (Platform.OS === 'web') {
+            const usuarios = JSON.parse(localStorage.getItem(this.storageKeys.usuarios));
+            return usuarios.find(u => u.correo === correo);
+        } else {
+            return await this.db.getFirstAsync(
+                'SELECT * FROM usuarios WHERE correo = ?;',
+                correo
+            );
+        }
+    }
     
     async registrarUsuario(nombreCompleto, correo, contrasena, telefono) {
         const contrasenaHash = await this.hashPassword(contrasena);
@@ -208,10 +279,37 @@ class DatabaseService {
                 throw new Error('Correo o contraseña incorrectos');
             }
 
+            // Verificar si está bloqueado
+            if (usuario.bloqueado_hasta && new Date(usuario.bloqueado_hasta) > new Date()) {
+                const minutosRestantes = Math.ceil((new Date(usuario.bloqueado_hasta) - new Date()) / 60000);
+                throw new Error(`Cuenta bloqueada. Intenta de nuevo en ${minutosRestantes} minutos`);
+            }
+
             const passwordValida = await this.verifyPassword(contrasena, usuario.contrasena);
+            
             if (!passwordValida) {
+                // Incrementar intentos fallidos
+                usuario.intentos_fallidos = (usuario.intentos_fallidos || 0) + 1;
+                
+                // Bloquear después de 5 intentos fallidos (15 minutos)
+                if (usuario.intentos_fallidos >= 5) {
+                    usuario.bloqueado_hasta = new Date(Date.now() + 15 * 60000).toISOString();
+                    usuario.intentos_fallidos = 0;
+                }
+                
+                const index = usuarios.findIndex(u => u.correo === correo);
+                usuarios[index] = usuario;
+                localStorage.setItem(this.storageKeys.usuarios, JSON.stringify(usuarios));
+                
                 throw new Error('Correo o contraseña incorrectos');
             }
+
+            // Login exitoso - resetear intentos fallidos
+            usuario.intentos_fallidos = 0;
+            usuario.bloqueado_hasta = null;
+            const index = usuarios.findIndex(u => u.correo === correo);
+            usuarios[index] = usuario;
+            localStorage.setItem(this.storageKeys.usuarios, JSON.stringify(usuarios));
 
             return usuario;
         } else {
@@ -224,10 +322,41 @@ class DatabaseService {
                 throw new Error('Correo o contraseña incorrectos');
             }
 
+            // Verificar si está bloqueado
+            if (usuario.bloqueado_hasta && new Date(usuario.bloqueado_hasta) > new Date()) {
+                const minutosRestantes = Math.ceil((new Date(usuario.bloqueado_hasta) - new Date()) / 60000);
+                throw new Error(`Cuenta bloqueada. Intenta de nuevo en ${minutosRestantes} minutos`);
+            }
+
             const passwordValida = await this.verifyPassword(contrasena, usuario.contrasena);
+            
             if (!passwordValida) {
+                // Incrementar intentos fallidos
+                const intentos = (usuario.intentos_fallidos || 0) + 1;
+                
+                // Bloquear después de 5 intentos fallidos (15 minutos)
+                if (intentos >= 5) {
+                    await this.db.runAsync(
+                        'UPDATE usuarios SET intentos_fallidos = 0, bloqueado_hasta = ? WHERE id = ?;',
+                        new Date(Date.now() + 15 * 60000).toISOString(),
+                        usuario.id
+                    );
+                } else {
+                    await this.db.runAsync(
+                        'UPDATE usuarios SET intentos_fallidos = ? WHERE id = ?;',
+                        intentos,
+                        usuario.id
+                    );
+                }
+                
                 throw new Error('Correo o contraseña incorrectos');
             }
+
+            // Login exitoso - resetear intentos fallidos
+            await this.db.runAsync(
+                'UPDATE usuarios SET intentos_fallidos = 0, bloqueado_hasta = NULL WHERE id = ?;',
+                usuario.id
+            );
 
             return usuario;
         }
@@ -259,6 +388,111 @@ class DatabaseService {
             );
             return await this.obtenerUsuarioPorId(usuarioId);
         }
+    }
+
+    async generarContrasenaTemporalYEnviar(correo) {
+        // Buscar usuario por correo
+        const usuario = await this.obtenerUsuarioPorEmail(correo);
+        
+        if (!usuario) {
+            // Por seguridad, no revelar si el correo existe o no
+            return {
+                success: true,
+                mensaje: 'Si el correo existe, recibirás las instrucciones de recuperación'
+            };
+        }
+
+        // Generar contraseña temporal aleatoria
+        const contrasenatemporal = Math.random().toString(36).slice(-8).toUpperCase();
+        
+        // Hashear la contraseña temporal
+        const contrasenaHash = await this.hashPassword(contrasenatemporal);
+        
+        // Actualizar en la base de datos
+        if (Platform.OS === 'web') {
+            const usuarios = JSON.parse(localStorage.getItem(this.storageKeys.usuarios));
+            const index = usuarios.findIndex(u => u.correo === correo);
+            
+            if (index !== -1) {
+                usuarios[index].contrasena = contrasenaHash;
+                usuarios[index].debe_cambiar_password = 1;
+                usuarios[index].ultimo_cambio_password = new Date().toISOString();
+                usuarios[index].intentos_fallidos = 0;
+                usuarios[index].bloqueado_hasta = null;
+                localStorage.setItem(this.storageKeys.usuarios, JSON.stringify(usuarios));
+            }
+        } else {
+            await this.db.runAsync(
+                `UPDATE usuarios SET 
+                    contrasena = ?, 
+                    debe_cambiar_password = 1, 
+                    ultimo_cambio_password = ?,
+                    intentos_fallidos = 0,
+                    bloqueado_hasta = NULL
+                WHERE id = ?;`,
+                contrasenaHash,
+                new Date().toISOString(),
+                usuario.id
+            );
+        }
+
+        // Aquí enviarías el email con la contraseña temporal
+        // Por ahora, la retornamos para que la veas en consola
+        console.log(`📧 Contraseña temporal para ${correo}: ${contrasenatemporal}`);
+        
+        return {
+            success: true,
+            mensaje: 'Si el correo existe, recibirás las instrucciones de recuperación',
+            // En desarrollo, puedes mostrar la contraseña temporal
+            // EN PRODUCCIÓN, ELIMINA ESTA LÍNEA:
+            contrasenaTemporalDEV: contrasenatemporal
+        };
+    }
+
+    async cambiarContrasena(usuarioId, contrasenaActual, contrasenaNueva) {
+        const usuario = await this.obtenerUsuarioPorId(usuarioId);
+        
+        if (!usuario) {
+            throw new Error('Usuario no encontrado');
+        }
+
+        // Verificar contraseña actual
+        const passwordValida = await this.verifyPassword(contrasenaActual, usuario.contrasena);
+        if (!passwordValida) {
+            throw new Error('La contraseña actual es incorrecta');
+        }
+
+        // Hashear nueva contraseña
+        const nuevaContrasenaHash = await this.hashPassword(contrasenaNueva);
+
+        // Actualizar en la base de datos
+        if (Platform.OS === 'web') {
+            const usuarios = JSON.parse(localStorage.getItem(this.storageKeys.usuarios));
+            const index = usuarios.findIndex(u => u.id === usuarioId);
+            
+            if (index !== -1) {
+                usuarios[index].contrasena = nuevaContrasenaHash;
+                usuarios[index].debe_cambiar_password = 0;
+                usuarios[index].ultimo_cambio_password = new Date().toISOString();
+                localStorage.setItem(this.storageKeys.usuarios, JSON.stringify(usuarios));
+            }
+        } else {
+            await this.db.runAsync(
+                `UPDATE usuarios SET 
+                    contrasena = ?, 
+                    debe_cambiar_password = 0, 
+                    ultimo_cambio_password = ?
+                WHERE id = ?;`,
+                nuevaContrasenaHash,
+                new Date().toISOString(),
+                usuarioId
+            );
+        }
+
+        return {
+            success: true,
+            mensaje: 'Contraseña actualizada correctamente'
+        };
     }
 
     
