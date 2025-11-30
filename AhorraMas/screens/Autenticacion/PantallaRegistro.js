@@ -11,9 +11,11 @@ import {
   ScrollView,
   Image,
   ImageBackground,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import DatabaseService from '../../database/DatabaseService';
 
 const cerdo = require('../../assets/cerdo.png');
 
@@ -23,16 +25,67 @@ const RegisterScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = () => {
-    // Sin validaciones, mostrar alerta y navegar al login
-    Alert.alert(
-      'Registro Exitoso',
-      'Tu cuenta ha sido creada exitosamente',
-      [
-        { text: 'OK', onPress: () => navigation.navigate('Login') }
-      ]
-    );
+  const validarEmail = (email) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
+
+  const validarTelefono = (phone) => {
+    const regex = /^\d{10}$/;
+    return regex.test(phone);
+  };
+
+  const handleSubmit = async () => {
+    // Validaciones
+    if (!name.trim() || !email.trim() || !password.trim() || !phone.trim()) {
+      Alert.alert('Error', 'Por favor completa todos los campos');
+      return;
+    }
+
+    if (!validarEmail(email.trim())) {
+      Alert.alert('Error', 'Por favor ingresa un correo electrónico válido');
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    if (!validarTelefono(phone.trim())) {
+      Alert.alert('Error', 'Por favor ingresa un teléfono válido de 10 dígitos');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Registrar usuario en la base de datos
+      await DatabaseService.registrarUsuario(
+        name.trim(),
+        email.trim(),
+        password,
+        phone.trim()
+      );
+
+      // Registro exitoso
+      Alert.alert(
+        'Registro Exitoso',
+        'Tu cuenta ha sido creada exitosamente',
+        [
+          { 
+            text: 'OK', 
+            onPress: () => navigation.replace('Login')
+          }
+        ]
+      );
+    } catch (error) {
+      Alert.alert('Error de Registro', error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -116,10 +169,15 @@ const RegisterScreen = () => {
               {/* Submit Button */}
               <View style={styles.submitContainer}>
                 <TouchableOpacity
-                  style={styles.submitButton}
+                  style={[styles.submitButton, loading && styles.submitButtonDisabled]}
                   onPress={handleSubmit}
+                  disabled={loading}
                 >
-                  <Text style={styles.submitButtonText}>Registrarse</Text>
+                  {loading ? (
+                    <ActivityIndicator color="#374151" />
+                  ) : (
+                    <Text style={styles.submitButtonText}>Registrarse</Text>
+                  )}
                 </TouchableOpacity>
 
                 <View style={styles.loginContainer}>
@@ -239,6 +297,9 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     alignItems: 'center',
     marginBottom: 16,
+  },
+  submitButtonDisabled: {
+    opacity: 0.6,
   },
   submitButtonText: {
     color: '#374151',
