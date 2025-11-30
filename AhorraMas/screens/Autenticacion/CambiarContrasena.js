@@ -9,56 +9,62 @@ import {
     KeyboardAvoidingView,
     Platform,
     ScrollView,
-    Image,
     ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import DatabaseService from '../../database/DatabaseService';
 
-const cerdo = require('../../assets/cerdo.png');
-
-const ForgotPasswordScreen = () => {
+const CambiarContrasenaScreen = () => {
     const navigation = useNavigation();
-    const [email, setEmail] = useState('');
-    const [loading, setLoading] = useState(false);
+    const route = useRoute();
+    const { usuarioId } = route.params || {};
 
-    const validarEmail = (email) => {
-        const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return regex.test(email);
-    };
+    const [contrasenaActual, setContrasenaActual] = useState('');
+    const [contrasenaNueva, setContrasenaNueva] = useState('');
+    const [confirmarContrasena, setConfirmarContrasena] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const handleSubmit = async () => {
         // Validaciones
-        if (!email.trim()) {
-            Alert.alert('Error', 'Por favor ingresa tu correo electrónico');
+        if (!contrasenaActual.trim() || !contrasenaNueva.trim() || !confirmarContrasena.trim()) {
+            Alert.alert('Error', 'Por favor completa todos los campos');
             return;
         }
 
-        if (!validarEmail(email.trim())) {
-            Alert.alert('Error', 'Por favor ingresa un correo electrónico válido');
+        if (contrasenaNueva.length < 6) {
+            Alert.alert('Error', 'La nueva contraseña debe tener al menos 6 caracteres');
+            return;
+        }
+
+        if (contrasenaNueva !== confirmarContrasena) {
+            Alert.alert('Error', 'Las contraseñas no coinciden');
+            return;
+        }
+
+        if (contrasenaActual === contrasenaNueva) {
+            Alert.alert('Error', 'La nueva contraseña debe ser diferente a la actual');
             return;
         }
 
         setLoading(true);
 
         try {
-            // Generar contraseña temporal
-            const resultado = await DatabaseService.generarContrasenaTemporalYEnviar(email.trim());
+            // Cambiar contraseña
+            const resultado = await DatabaseService.cambiarContrasena(
+                usuarioId,
+                contrasenaActual,
+                contrasenaNueva
+            );
 
             if (resultado.success) {
-                // En desarrollo, mostramos la contraseña temporal
-                // EN PRODUCCIÓN, esto se enviaría por email
                 Alert.alert(
-                    'Contraseña Temporal Generada',
-                    `Se ha generado una nueva contraseña temporal.\n\n` +
-                    `Para desarrollo, tu contraseña temporal es:\n${resultado.contrasenaTemporalDEV}\n\n` +
-                    `Por favor, cámbiala después de iniciar sesión.\n\n` +
-                    `(En producción, esto se enviaría por correo electrónico)`,
+                    'Contraseña Actualizada',
+                    'Tu contraseña ha sido cambiada exitosamente',
                     [
                         { 
                             text: 'OK', 
-                            onPress: () => navigation.navigate('Login') 
+                            onPress: () => navigation.navigate('Main')
                         }
                     ]
                 );
@@ -83,7 +89,7 @@ const ForgotPasswordScreen = () => {
                     <View style={styles.screenContainer}>
                         {/* Header */}
                         <View style={styles.header}>
-                            <Text style={styles.titleText}>Recuperar Contraseña</Text>
+                            <Text style={styles.titleText}>Cambiar Contraseña</Text>
                             <TouchableOpacity onPress={() => navigation.goBack()}>
                                 <Text style={styles.helpText}>Cancelar</Text>
                             </TouchableOpacity>
@@ -91,15 +97,15 @@ const ForgotPasswordScreen = () => {
 
                         {/* Icon */}
                         <View style={styles.iconContainer}>
-                            <View style={styles.piggyBankPlaceholder}>
-                                <Image source={cerdo} style={styles.piggyBankImage} />
+                            <View style={styles.lockPlaceholder}>
+                                <Text style={styles.lockEmoji}>🔒</Text>
                             </View>
                         </View>
 
                         {/* Subtitle */}
                         <View style={styles.subtitleContainer}>
                             <Text style={styles.subtitleText}>
-                                Ingresa tu email para recuperar tu contraseña
+                                Ingresa tu contraseña actual y la nueva contraseña
                             </Text>
                         </View>
 
@@ -108,14 +114,43 @@ const ForgotPasswordScreen = () => {
                             <View style={styles.inputContainer}>
                                 <TextInput
                                     style={styles.input}
-                                    value={email}
-                                    onChangeText={setEmail}
-                                    placeholder="email@dominio.com"
+                                    value={contrasenaActual}
+                                    onChangeText={setContrasenaActual}
+                                    placeholder="Contraseña actual"
                                     placeholderTextColor="#9ca3af"
-                                    keyboardType="email-address"
+                                    secureTextEntry
                                     autoCapitalize="none"
-                                    autoCorrect={false}
                                 />
+
+                                <TextInput
+                                    style={styles.input}
+                                    value={contrasenaNueva}
+                                    onChangeText={setContrasenaNueva}
+                                    placeholder="Nueva contraseña"
+                                    placeholderTextColor="#9ca3af"
+                                    secureTextEntry
+                                    autoCapitalize="none"
+                                />
+
+                                <TextInput
+                                    style={styles.input}
+                                    value={confirmarContrasena}
+                                    onChangeText={setConfirmarContrasena}
+                                    placeholder="Confirmar nueva contraseña"
+                                    placeholderTextColor="#9ca3af"
+                                    secureTextEntry
+                                    autoCapitalize="none"
+                                />
+                            </View>
+
+                            {/* Info Text */}
+                            <View style={styles.infoContainer}>
+                                <Text style={styles.infoText}>
+                                    • La contraseña debe tener al menos 6 caracteres
+                                </Text>
+                                <Text style={styles.infoText}>
+                                    • Debe ser diferente a tu contraseña actual
+                                </Text>
                             </View>
 
                             {/* Submit Button */}
@@ -128,16 +163,9 @@ const ForgotPasswordScreen = () => {
                                     {loading ? (
                                         <ActivityIndicator color="#374151" />
                                     ) : (
-                                        <Text style={styles.submitButtonText}>Recuperar Contraseña</Text>
+                                        <Text style={styles.submitButtonText}>Cambiar Contraseña</Text>
                                     )}
                                 </TouchableOpacity>
-
-                                <View style={styles.registerContainer}>
-                                    <Text style={styles.registerText}>¿Recuerdas tu contraseña? </Text>
-                                    <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                                        <Text style={styles.registerLink}>Inicia Sesión</Text>
-                                    </TouchableOpacity>
-                                </View>
                             </View>
                         </View>
                     </View>
@@ -172,7 +200,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
-        marginBottom: 48,
+        marginBottom: 32,
     },
     titleText: {
         color: 'white',
@@ -187,7 +215,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 32,
     },
-    piggyBankPlaceholder: {
+    lockPlaceholder: {
         width: 96,
         height: 96,
         justifyContent: 'center',
@@ -195,11 +223,8 @@ const styles = StyleSheet.create({
         backgroundColor: '#4a4a4a',
         borderRadius: 48,
     },
-    piggyBankImage: {
-        width: 80,
-        height: 80,
-        resizeMode: 'contain',
-        overflow: 'hidden',
+    lockEmoji: {
+        fontSize: 48,
     },
     subtitleContainer: {
         alignItems: 'center',
@@ -225,6 +250,17 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         fontSize: 16,
     },
+    infoContainer: {
+        backgroundColor: '#4a4a4a',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 24,
+    },
+    infoText: {
+        color: '#9ca3af',
+        fontSize: 14,
+        marginBottom: 8,
+    },
     submitContainer: {
         marginTop: 'auto',
     },
@@ -243,20 +279,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
     },
-    registerContainer: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    registerText: {
-        color: '#9ca3af',
-        fontSize: 14,
-    },
-    registerLink: {
-        color: 'white',
-        fontSize: 14,
-        fontWeight: '500',
-    },
 });
 
-export default ForgotPasswordScreen;
+export default CambiarContrasenaScreen;

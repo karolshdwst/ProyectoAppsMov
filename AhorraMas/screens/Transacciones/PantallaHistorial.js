@@ -53,9 +53,6 @@ const HistoryScreen = ({ transactions = [], activeTab, onTabChange }) => {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.titleText}>Historial</Text>
-          <TouchableOpacity>
-            <Text style={styles.helpText}>Ayuda</Text>
-          </TouchableOpacity>
         </View>
 
         {/* History List */}

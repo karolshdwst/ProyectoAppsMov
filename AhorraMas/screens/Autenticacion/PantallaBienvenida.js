@@ -22,9 +22,6 @@ const WelcomeScreen = () => {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.welcomeText}>Bienvenido</Text>
-          <TouchableOpacity>
-            <Text style={styles.helpText}>Ayuda</Text>
-          </TouchableOpacity>
         </View>
 
         {/* Logo and Illustration */}

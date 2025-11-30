@@ -102,9 +102,6 @@ const RegisterScreen = () => {
             {/* Header */}
             <View style={styles.header}>
               <Text style={styles.titleText}>Registrarse</Text>
-              <TouchableOpacity>
-                <Text style={styles.helpText}>Ayuda</Text>
-              </TouchableOpacity>
             </View>
 
             {/* Icon */}

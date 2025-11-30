@@ -37,22 +37,23 @@ const LoginScreen = () => {
     try {
       // Intentar login con la base de datos
       const usuario = await DatabaseService.loginUsuario(email.trim(), password);
-      
+
       // Guardar sesión
       await DatabaseService.guardarSesion(usuario);
 
       // Verificar si debe cambiar contraseña
       if (usuario.debe_cambiar_password === 1) {
-        Alert.alert(
-          'Cambio de contraseña requerido',
-          'Por seguridad, debes cambiar tu contraseña temporal.',
-          [
-            {
-              text: 'OK',
-              onPress: () => navigation.navigate('CambiarContrasena', { usuarioId: usuario.id })
-            }
-          ]
-        );
+        // Navegar directamente a cambiar contraseña
+        setLoading(false);
+        navigation.replace('CambiarPassword', { usuarioId: usuario.id });
+
+        // Mostrar alerta después de navegar
+        setTimeout(() => {
+          Alert.alert(
+            'Cambio de contraseña requerido',
+            'Por seguridad, debes cambiar tu contraseña temporal.'
+          );
+        }, 500);
       } else {
         // Login exitoso - ir a pantalla principal
         navigation.replace('Main');
@@ -79,9 +80,6 @@ const LoginScreen = () => {
             {/* Header */}
             <View style={styles.header}>
               <Text style={styles.titleText}>Iniciar Sesión</Text>
-              <TouchableOpacity>
-                <Text style={styles.helpText}>Ayuda</Text>
-              </TouchableOpacity>
             </View>
 
             {/* Icon */}
