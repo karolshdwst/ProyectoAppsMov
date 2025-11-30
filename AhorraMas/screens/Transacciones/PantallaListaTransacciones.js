@@ -6,6 +6,7 @@ import {
   StyleSheet,
   FlatList,
   Alert,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -18,12 +19,14 @@ const TransactionsListScreen = ({
   const navigation = useNavigation();
   const [filterType, setFilterType] = useState('all');
   const [filterCategory, setFilterCategory] = useState('all');
+  const [filterDate, setFilterDate] = useState('');
 
   const categories = Array.from(new Set(transactions.map(t => t.category)));
 
   const filteredTransactions = transactions.filter(t => {
     if (filterType !== 'all' && t.type !== filterType) return false;
     if (filterCategory !== 'all' && t.category !== filterCategory) return false;
+    if (filterDate && t.date !== filterDate) return false;
     return true;
   });
 
@@ -154,6 +157,17 @@ const TransactionsListScreen = ({
               </TouchableOpacity>
             ))}
           </View>
+        </View>
+
+        <View style={styles.filterContainer}>
+          <Text style={styles.filterLabel}>Filtrar por fecha (YYYY-MM-DD):</Text>
+          <TextInput
+            style={styles.filterInput}
+            value={filterDate}
+            onChangeText={setFilterDate}
+            placeholder="2025-11-29"
+            placeholderTextColor="#9ca3af"
+          />
         </View>
 
         {/* Transactions List */}
@@ -386,6 +400,20 @@ const styles = StyleSheet.create({
   },
   activeNavText: {
     color: 'white',
+  },
+  filterContainer: {
+    marginBottom: 16,
+  },
+  filterInput: {
+    backgroundColor: '#6b7280',
+    color: 'white',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  filterLabel: {
+    color: '#9ca3af',
+    marginBottom: 8,
   },
 });
 
