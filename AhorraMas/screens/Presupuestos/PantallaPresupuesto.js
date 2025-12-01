@@ -99,20 +99,6 @@ const PantallaPresupuesto = ({ presupuestos = [], onUpdateBudget }) => {
           >
             <Text style={styles.textoAgregarCategoria}>+ Agregar Presupuesto</Text>
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.botonConfiguracion}
-            onPress={manejarConfiguración}
-          >
-            <Text style={styles.textoConfiguracion}>Configuración</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.botonCerrarSesion}
-            onPress={manejarCerrarSesion}
-          >
-            <Text style={styles.textoCerrarSesion}>Cerrar Sesión</Text>
-          </TouchableOpacity>
         </ScrollView>
       </View>
     </SafeAreaView>
@@ -231,34 +217,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
-  botonConfiguracion: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#4b5563',
-    paddingVertical: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
   iconoConfiguracion: {
     fontSize: 18,
     marginRight: 8,
-  },
-  textoConfiguracion: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  botonCerrarSesion: {
-    backgroundColor: '#dc2626',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  textoCerrarSesion: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
   },
   navegacionInferior: {
     position: 'absolute',
