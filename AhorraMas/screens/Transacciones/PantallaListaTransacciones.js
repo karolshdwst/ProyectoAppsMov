@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import DatabaseService from '../../database/DatabaseService';
 import {
   View,
   Text,
@@ -11,22 +13,44 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 
-const TransactionsListScreen = ({
-  transactions = [],
-  onDelete,
-  onEdit
-}) => {
+const TransactionsListScreen = () => {
   const navigation = useNavigation();
+  const [transactions, setTransactions] = useState([]);
   const [filterType, setFilterType] = useState('all');
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterDate, setFilterDate] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const categories = Array.from(new Set(transactions.map(t => t.category)));
+  // Cargar transacciones al enfocar la pantalla
+  useFocusEffect(
+    React.useCallback(() => {
+      cargarTransacciones();
+    }, [])
+  );
+
+  const cargarTransacciones = async () => {
+    try {
+      setLoading(true);
+      const sesion = await DatabaseService.obtenerSesion();
+      if (sesion) {
+        const data = await DatabaseService.obtenerTransaccionesPorUsuario(sesion.id);
+        setTransactions(data);
+      }
+    } catch (error) {
+      console.error('Error al cargar transacciones:', error);
+      Alert.alert('Error', 'No se pudieron cargar las transacciones');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const categories = Array.from(new Set(transactions.map(t => t.categoria)));
 
   const filteredTransactions = transactions.filter(t => {
-    if (filterType !== 'all' && t.type !== filterType) return false;
-    if (filterCategory !== 'all' && t.category !== filterCategory) return false;
-    if (filterDate && t.date !== filterDate) return false;
+    if (filterType !== 'all' && t.tipo !== filterType) return false;
+    if (filterCategory !== 'all' && t.categoria !== filterCategory) return false;
+    // Filtro de fecha simple (coincidencia exacta de string YYYY-MM-DD)
+    if (filterDate && !t.fecha.startsWith(filterDate)) return false;
     return true;
   });
 
@@ -36,50 +60,68 @@ const TransactionsListScreen = ({
       '¿Estás seguro de que quieres eliminar esta transacción?',
       [
         { text: 'Cancelar', style: 'cancel' },
-        { text: 'Eliminar', style: 'destructive', onPress: () => onDelete(id) }
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await DatabaseService.eliminarTransaccion(id);
+              cargarTransacciones(); // Recargar lista
+            } catch (error) {
+              console.error('Error al eliminar:', error);
+              Alert.alert('Error', 'No se pudo eliminar la transacción');
+            }
+          }
+        }
       ]
     );
+  };
+
+  const handleEdit = (transaction) => {
+    navigation.navigate('FormularioTransaccion', { transaction });
   };
 
   const renderTransaction = ({ item: transaction }) => (
     <View style={styles.transactionItem}>
       <View style={styles.transactionContent}>
         <View style={styles.transactionHeader}>
-          <Text style={styles.transactionCategory}>{transaction.category}</Text>
+          <Text style={styles.transactionCategory}>{transaction.categoria}</Text>
           <View style={[
             styles.typeBadge,
-            transaction.type === 'income' ? styles.incomeBadge : styles.expenseBadge
+            transaction.tipo === 'ingreso' ? styles.incomeBadge : styles.expenseBadge
           ]}>
             <Text style={styles.typeBadgeText}>
-              {transaction.type === 'income' ? 'Ingreso' : 'Gasto'}
+              {transaction.tipo === 'ingreso' ? 'Ingreso' : 'Gasto'}
             </Text>
           </View>
         </View>
-        <Text style={styles.transactionDescription}>{transaction.description}</Text>
-        <Text style={styles.transactionDate}>{transaction.date}</Text>
+        <Text style={styles.transactionDescription}>{transaction.descripcion}</Text>
+        <Text style={styles.transactionDate}>
+          {new Date(transaction.fecha).toLocaleDateString()}
+        </Text>
       </View>
 
       <View style={styles.transactionActions}>
         <Text style={[
           styles.transactionAmount,
-          transaction.type === 'income' ? styles.incomeAmount : styles.expenseAmount
+          transaction.tipo === 'ingreso' ? styles.incomeAmount : styles.expenseAmount
         ]}>
-          {transaction.type === 'income' ? '+' : '-'}${transaction.amount}
+          {transaction.tipo === 'ingreso' ? '+' : '-'}${transaction.monto}
         </Text>
 
         <View style={styles.actionButtons}>
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={() => onEdit(transaction)}
+            onPress={() => handleEdit(transaction)}
           >
-            <Text style={styles.actionButtonText}>✏️</Text>
+            <Text style={styles.actionButtonText}>Editar</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => handleDelete(transaction.id)}
           >
-            <Text style={styles.actionButtonText}>🗑️</Text>
+            <Text style={[styles.actionButtonText, styles.deleteButtonText]}>Borrar</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -118,8 +160,8 @@ const TransactionsListScreen = ({
         <View style={styles.filtersContainer}>
           <View style={styles.typeFilters}>
             {renderFilterButton('all', 'Todas')}
-            {renderFilterButton('income', 'Ingresos')}
-            {renderFilterButton('expense', 'Gastos')}
+            {renderFilterButton('ingreso', 'Ingresos')}
+            {renderFilterButton('gasto', 'Gastos')}
           </View>
 
           {/* Category Filter - Simplified as buttons for now */}
@@ -139,9 +181,9 @@ const TransactionsListScreen = ({
               </Text>
             </TouchableOpacity>
 
-            {categories.slice(0, 3).map(cat => (
+            {categories.slice(0, 3).map((cat, index) => (
               <TouchableOpacity
-                key={cat}
+                key={`${cat}-${index}`}
                 style={[
                   styles.categoryButton,
                   filterCategory === cat && styles.activeCategoryButton
@@ -174,13 +216,15 @@ const TransactionsListScreen = ({
         <View style={styles.listContainer}>
           {filteredTransactions.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No hay transacciones</Text>
+              <Text style={styles.emptyText}>
+                {loading ? 'Cargando...' : 'No hay transacciones'}
+              </Text>
             </View>
           ) : (
             <FlatList
               data={filteredTransactions}
               renderItem={renderTransaction}
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item) => item.id ? item.id.toString() : Math.random().toString()}
               contentContainerStyle={styles.listContent}
               showsVerticalScrollIndicator={false}
             />
@@ -356,12 +400,24 @@ const styles = StyleSheet.create({
   actionButtons: {
     flexDirection: 'row',
     gap: 8,
+    alignItems: 'center',
   },
   actionButton: {
     padding: 8,
   },
   actionButtonText: {
     fontSize: 16,
+    fontWeight: '500',
+    borderRadius: 12,
+    padding: 8,
+
+    color: '#d1d5db',
+  },
+  deleteButtonText: {
+    backgroundColor: '#ef4444',
+    borderRadius: 12,
+    padding: 5,
+    color: '#ffffffff',
   },
   addButton: {
     backgroundColor: 'white',

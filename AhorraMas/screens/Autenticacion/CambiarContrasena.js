@@ -62,8 +62,8 @@ const CambiarContrasenaScreen = () => {
                     'Contraseña Actualizada',
                     'Tu contraseña ha sido cambiada exitosamente',
                     [
-                        { 
-                            text: 'OK', 
+                        {
+                            text: 'OK',
                             onPress: () => navigation.navigate('Main')
                         }
                     ]
@@ -93,13 +93,6 @@ const CambiarContrasenaScreen = () => {
                             <TouchableOpacity onPress={() => navigation.goBack()}>
                                 <Text style={styles.helpText}>Cancelar</Text>
                             </TouchableOpacity>
-                        </View>
-
-                        {/* Icon */}
-                        <View style={styles.iconContainer}>
-                            <View style={styles.lockPlaceholder}>
-                                <Text style={styles.lockEmoji}>🔒</Text>
-                            </View>
                         </View>
 
                         {/* Subtitle */}
@@ -210,10 +203,6 @@ const styles = StyleSheet.create({
     helpText: {
         color: '#9ca3af',
         fontSize: 16,
-    },
-    iconContainer: {
-        alignItems: 'center',
-        marginBottom: 32,
     },
     lockPlaceholder: {
         width: 96,
