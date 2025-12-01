@@ -180,7 +180,6 @@ const PantallaPresupuestoIntegrada = ({ usuarioId = 1 }) => {
           <Text style={styles.categoriaPresupuesto}>{item.categoria}</Text>
           <Text style={styles.montoPresupuesto}>Límite: ${Number(item.montoLimite).toFixed(2)}</Text>
           <Text style={styles.montoGastado}>Gastado: ${Number(item.montoGastado || 0).toFixed(2)}</Text>
-          {/* Condicional si el monto gastado es mayor al limite mostrarnotificacion */}
         </View>
 
         <View style={{ flexDirection: 'row', gap: 8 }}>
