@@ -193,11 +193,7 @@ const PantallaPresupuestoIntegrada = ({ usuarioId = 1 }) => {
         </View>
       </View>
 
-      {/* indicador simple de estado */}
       <View style={{ marginTop: 8 }}>
-        {item.excedioLimite && (
-          <Text style={{ color: '#f87171' }}>Excedido</Text>
-        )}
         {!item.excedioLimite && item.montoGastado / (item.montoLimite || 1) >= 0.8 && (
           <Text style={{ color: '#fde68a' }}>Cerca del límite</Text>
         )}
@@ -241,7 +237,6 @@ const PantallaPresupuestoIntegrada = ({ usuarioId = 1 }) => {
       <View style={styles.contenedorPantalla}>
         <ScrollView contentContainerStyle={styles.scrollContenido} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
-            <MostrarNotificaciones />
             <Text style={styles.titleText}>Presupuestos</Text>
             <TouchableOpacity onPress={() => navigation.navigate('MiCuenta')}>
               <Text style={styles.helpText}>Mi Cuenta</Text>
@@ -271,6 +266,8 @@ const PantallaPresupuestoIntegrada = ({ usuarioId = 1 }) => {
                 <Text style={styles.mesBtnText}>▶</Text>
               </TouchableOpacity>
             </View>
+
+            <MostrarNotificaciones />
           </View>
 
           <Text style={styles.tituloSeccion}>Presupuestos Mensuales</Text>
@@ -295,11 +292,6 @@ const PantallaPresupuestoIntegrada = ({ usuarioId = 1 }) => {
               </View>
             )}
           </View>
-
-
-
-
-
           <View style={{ height: 120 }} />
         </ScrollView>
       </View>
