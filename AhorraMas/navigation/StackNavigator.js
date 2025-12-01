@@ -4,6 +4,7 @@ import PantallaBienvenida from '../screens/Autenticacion/PantallaBienvenida';
 import PantallaLogin from '../screens/Autenticacion/PantallaLogin';
 import PantallaRegistro from '../screens/Autenticacion/PantallaRegistro';
 import OlvidasteContrasenna from '../screens/Autenticacion/OlvidasteContrasenna';
+import CambiarContrasena from '../screens/Autenticacion/CambiarContrasena';
 import PantallaFormularioTransaccion from '../screens/Transacciones/PantallaFormularioTransaccion';
 import PantallaMiCuenta from '../screens/Configuracion/PantallaMiCuenta';
 import TabNavigator from './TabNavigator';
@@ -33,6 +34,10 @@ const StackNavigator = () => {
             <Stack.Screen
                 name="OlvidarContrasenna"
                 component={OlvidasteContrasenna}
+            />
+            <Stack.Screen
+                name="CambiarPassword"
+                component={CambiarContrasena}
             />
             <Stack.Screen
                 name="FormularioTransaccion"

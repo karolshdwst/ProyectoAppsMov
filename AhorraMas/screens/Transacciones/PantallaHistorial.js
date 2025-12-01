@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 const HistoryScreen = ({ transactions = [], activeTab, onTabChange }) => {
   // Group transactions by date
   const groupedTransactions = transactions.reduce((acc, transaction) => {
-    const date = transaction.date;
+    const date = transaction.fecha;
     if (!acc[date]) {
       acc[date] = [];
     }
@@ -24,14 +24,14 @@ const HistoryScreen = ({ transactions = [], activeTab, onTabChange }) => {
   const renderTransaction = (transaction) => (
     <View style={styles.transactionItem}>
       <View style={styles.transactionContent}>
-        <Text style={styles.transactionCategory}>{transaction.category}</Text>
-        <Text style={styles.transactionDescription}>{transaction.description}</Text>
+        <Text style={styles.transactionCategory}>{transaction.categoria}</Text>
+        <Text style={styles.transactionDescription}>{transaction.descripcion}</Text>
       </View>
       <Text style={[
         styles.transactionAmount,
-        transaction.type === 'income' ? styles.incomeAmount : styles.expenseAmount
+        transaction.tipo === 'ingreso' ? styles.incomeAmount : styles.expenseAmount
       ]}>
-        {transaction.type === 'income' ? '+' : '-'}${transaction.amount}
+        {transaction.tipo === 'ingreso' ? '+' : '-'}${transaction.monto}
       </Text>
     </View>
   );
@@ -53,9 +53,6 @@ const HistoryScreen = ({ transactions = [], activeTab, onTabChange }) => {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.titleText}>Historial</Text>
-          <TouchableOpacity>
-            <Text style={styles.helpText}>Ayuda</Text>
-          </TouchableOpacity>
         </View>
 
         {/* History List */}
@@ -77,28 +74,28 @@ const HistoryScreen = ({ transactions = [], activeTab, onTabChange }) => {
 
         {/* Bottom Navigation Placeholder */}
         <View style={styles.bottomNavigation}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.navItem, activeTab === 'home' && styles.activeNavItem]}
             onPress={() => onTabChange('home')}
           >
             <Text style={[styles.navText, activeTab === 'home' && styles.activeNavText]}>🏠</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={[styles.navItem, activeTab === 'balance' && styles.activeNavItem]}
             onPress={() => onTabChange('balance')}
           >
             <Text style={[styles.navText, activeTab === 'balance' && styles.activeNavText]}>📊</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={[styles.navItem, activeTab === 'transactions' && styles.activeNavItem]}
             onPress={() => onTabChange('transactions')}
           >
             <Text style={[styles.navText, activeTab === 'transactions' && styles.activeNavText]}>💳</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={[styles.navItem, activeTab === 'user' && styles.activeNavItem]}
             onPress={() => onTabChange('user')}
           >

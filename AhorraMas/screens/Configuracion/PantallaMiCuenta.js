@@ -53,7 +53,7 @@ const PantallaMiCuenta = () => {
 
     const handleCambiarContrasena = () => {
         if (usuario) {
-            navigation.navigate('CambiarContrasena', { usuarioId: usuario.id });
+            navigation.navigate('CambiarPassword', { usuarioId: usuario.id });
         }
     };
 

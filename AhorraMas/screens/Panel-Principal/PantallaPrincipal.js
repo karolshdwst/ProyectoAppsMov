@@ -18,26 +18,26 @@ const DashboardScreen = ({
 }) => {
     const navigation = useNavigation();
     const totalIncome = transactions
-        .filter(t => t.type === 'income')
-        .reduce((sum, t) => sum + t.amount, 0);
+        .filter(t => t.tipo === 'ingreso')
+        .reduce((sum, t) => sum + t.monto, 0);
 
     const totalExpense = transactions
-        .filter(t => t.type === 'expense')
-        .reduce((sum, t) => sum + t.amount, 0);
+        .filter(t => t.tipo === 'gasto')
+        .reduce((sum, t) => sum + t.monto, 0);
 
     const balance = totalIncome - totalExpense;
     const savings = balance * 0.4;
 
     const renderBudgetItem = (budget, index) => {
-        const percentage = (budget.spent / budget.limit) * 100;
+        const percentage = (budget.montoGastado / budget.montoLimite) * 100;
         const isOverBudget = percentage > 100;
 
         return (
             <View key={index} style={styles.budgetItem}>
                 <View style={styles.budgetHeader}>
-                    <Text style={styles.budgetCategory}>{budget.category}</Text>
+                    <Text style={styles.budgetCategory}>{budget.categoria}</Text>
                     <Text style={[styles.budgetAmount, isOverBudget && styles.overBudgetAmount]}>
-                        ${budget.spent} / ${budget.limit}
+                        ${budget.montoGastado} / ${budget.montoLimite}
                     </Text>
                 </View>
                 <View style={styles.progressBarContainer}>
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
         padding: 32,
         width: '100%',
         maxWidth: 400,
-        height: 700,
+        height: 'auto',
     },
     scrollContainer: {
         paddingBottom: 80,

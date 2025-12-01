@@ -14,7 +14,7 @@ class DatabaseService {
     }
 
     // INICIALIZACIÓN
-    
+
     async initialize() {
         if (Platform.OS === 'web') {
             console.log('Usando LocalStorage para web');
@@ -105,15 +105,15 @@ class DatabaseService {
     // =====================================================
     // FUNCIONES DE HASH PARA CONTRASEÑAS
     // =====================================================
-    
+
     async crearUsuarioPredeterminado() {
         if (Platform.OS === 'web') {
             const usuarios = JSON.parse(localStorage.getItem(this.storageKeys.usuarios));
-            
+
             // Verificar si ya existe el usuario predeterminado
             if (!usuarios.find(u => u.correo === 'admin@ahorros.com')) {
                 const contrasenaHash = await this.hashPassword('admin123');
-                
+
                 const usuarioPredeterminado = {
                     id: Date.now(),
                     nombreCompleto: 'Usuario Administrador',
@@ -127,7 +127,7 @@ class DatabaseService {
                     intentos_fallidos: 0,
                     bloqueado_hasta: null
                 };
-                
+
                 usuarios.push(usuarioPredeterminado);
                 localStorage.setItem(this.storageKeys.usuarios, JSON.stringify(usuarios));
                 console.log('Usuario predeterminado creado: admin@ahorros.com / admin123');
@@ -138,10 +138,10 @@ class DatabaseService {
                 'SELECT * FROM usuarios WHERE correo = ?;',
                 'admin@ahorros.com'
             );
-            
+
             if (!usuarioExistente) {
                 const contrasenaHash = await this.hashPassword('admin123');
-                
+
                 await this.db.runAsync(
                     'INSERT INTO usuarios (nombreCompleto, correo, contrasena, telefono, debe_cambiar_password, ultimo_cambio_password) VALUES (?, ?, ?, ?, ?, ?);',
                     'Usuario Administrador',
@@ -151,12 +151,12 @@ class DatabaseService {
                     0,
                     new Date().toISOString()
                 );
-                
+
                 console.log('Usuario predeterminado creado: admin@ahorros.com / admin123');
             }
         }
     }
-    
+
     async hashPassword(password) {
         if (Platform.OS === 'web') {
             // En web, usamos un hash simple (en producción usa bcrypt o similar)
@@ -176,9 +176,9 @@ class DatabaseService {
         return hash === hashedPassword;
     }
 
-    
+
     // GESTIÓN DE SESIÓN
- 
+
     async guardarSesion(usuario) {
         if (Platform.OS === 'web') {
             localStorage.setItem(this.storageKeys.sesion, JSON.stringify(usuario));
@@ -206,9 +206,9 @@ class DatabaseService {
         }
     }
 
-    
+
     // CRUD USUARIOS
-    
+
     async obtenerUsuarioPorEmail(correo) {
         if (Platform.OS === 'web') {
             const usuarios = JSON.parse(localStorage.getItem(this.storageKeys.usuarios));
@@ -220,7 +220,7 @@ class DatabaseService {
             );
         }
     }
-    
+
     async registrarUsuario(nombreCompleto, correo, contrasena, telefono) {
         const contrasenaHash = await this.hashPassword(contrasena);
 
@@ -286,21 +286,21 @@ class DatabaseService {
             }
 
             const passwordValida = await this.verifyPassword(contrasena, usuario.contrasena);
-            
+
             if (!passwordValida) {
                 // Incrementar intentos fallidos
                 usuario.intentos_fallidos = (usuario.intentos_fallidos || 0) + 1;
-                
+
                 // Bloquear después de 5 intentos fallidos (15 minutos)
                 if (usuario.intentos_fallidos >= 5) {
                     usuario.bloqueado_hasta = new Date(Date.now() + 15 * 60000).toISOString();
                     usuario.intentos_fallidos = 0;
                 }
-                
+
                 const index = usuarios.findIndex(u => u.correo === correo);
                 usuarios[index] = usuario;
                 localStorage.setItem(this.storageKeys.usuarios, JSON.stringify(usuarios));
-                
+
                 throw new Error('Correo o contraseña incorrectos');
             }
 
@@ -329,11 +329,11 @@ class DatabaseService {
             }
 
             const passwordValida = await this.verifyPassword(contrasena, usuario.contrasena);
-            
+
             if (!passwordValida) {
                 // Incrementar intentos fallidos
                 const intentos = (usuario.intentos_fallidos || 0) + 1;
-                
+
                 // Bloquear después de 5 intentos fallidos (15 minutos)
                 if (intentos >= 5) {
                     await this.db.runAsync(
@@ -348,7 +348,7 @@ class DatabaseService {
                         usuario.id
                     );
                 }
-                
+
                 throw new Error('Correo o contraseña incorrectos');
             }
 
@@ -393,7 +393,7 @@ class DatabaseService {
     async generarContrasenaTemporalYEnviar(correo) {
         // Buscar usuario por correo
         const usuario = await this.obtenerUsuarioPorEmail(correo);
-        
+
         if (!usuario) {
             // Por seguridad, no revelar si el correo existe o no
             return {
@@ -404,15 +404,15 @@ class DatabaseService {
 
         // Generar contraseña temporal aleatoria
         const contrasenatemporal = Math.random().toString(36).slice(-8).toUpperCase();
-        
+
         // Hashear la contraseña temporal
         const contrasenaHash = await this.hashPassword(contrasenatemporal);
-        
+
         // Actualizar en la base de datos
         if (Platform.OS === 'web') {
             const usuarios = JSON.parse(localStorage.getItem(this.storageKeys.usuarios));
             const index = usuarios.findIndex(u => u.correo === correo);
-            
+
             if (index !== -1) {
                 usuarios[index].contrasena = contrasenaHash;
                 usuarios[index].debe_cambiar_password = 1;
@@ -438,8 +438,8 @@ class DatabaseService {
 
         // Aquí enviarías el email con la contraseña temporal
         // Por ahora, la retornamos para que la veas en consola
-        console.log(`📧 Contraseña temporal para ${correo}: ${contrasenatemporal}`);
-        
+        console.log(`Contraseña temporal para ${correo}: ${contrasenatemporal}`);
+
         return {
             success: true,
             mensaje: 'Si el correo existe, recibirás las instrucciones de recuperación',
@@ -451,7 +451,7 @@ class DatabaseService {
 
     async cambiarContrasena(usuarioId, contrasenaActual, contrasenaNueva) {
         const usuario = await this.obtenerUsuarioPorId(usuarioId);
-        
+
         if (!usuario) {
             throw new Error('Usuario no encontrado');
         }
@@ -469,7 +469,7 @@ class DatabaseService {
         if (Platform.OS === 'web') {
             const usuarios = JSON.parse(localStorage.getItem(this.storageKeys.usuarios));
             const index = usuarios.findIndex(u => u.id === usuarioId);
-            
+
             if (index !== -1) {
                 usuarios[index].contrasena = nuevaContrasenaHash;
                 usuarios[index].debe_cambiar_password = 0;
@@ -495,9 +495,9 @@ class DatabaseService {
         };
     }
 
-    
+
     // CRUD TRANSACCIONES
-    
+
     async crearTransaccion(usuarioId, monto, tipo, categoria, fecha, descripcion) {
         if (Platform.OS === 'web') {
             const transacciones = JSON.parse(localStorage.getItem(this.storageKeys.transacciones));
@@ -683,9 +683,9 @@ class DatabaseService {
         }
     }
 
-    
+
     // FUNCIONES AUXILIARES DE BALANCE
-    
+
     async actualizarBalanceDespuesDeTransaccion(usuarioId, monto, tipo) {
         const usuario = await this.obtenerUsuarioPorId(usuarioId);
         if (!usuario) return;
@@ -715,9 +715,9 @@ class DatabaseService {
         await this.actualizarBalanceUsuario(usuarioId, nuevoBalance);
     }
 
-   
+
     // ESTADÍSTICAS Y REPORTES
-   
+
     async obtenerEstadisticasMensuales(usuarioId, mes, anio) {
         const fechaInicio = new Date(anio, mes - 1, 1).toISOString();
         const fechaFin = new Date(anio, mes, 0, 23, 59, 59).toISOString();
@@ -757,9 +757,9 @@ class DatabaseService {
         };
     }
 
-    
+
     // CRUD PRESUPUESTOS
-   
+
     async crearPresupuesto(usuarioId, categoria, montoLimite, mes, anio) {
         const mesActual = mes || new Date().getMonth() + 1;
         const anioActual = anio || new Date().getFullYear();

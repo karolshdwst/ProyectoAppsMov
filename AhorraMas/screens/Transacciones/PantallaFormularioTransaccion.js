@@ -11,12 +11,13 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import DatabaseService from '../../database/DatabaseService';
 
-const categories = [
-  'Salary',
+const categorias = [
+  'Salario',
   'Freelance',
-  'Investment',
+  'Inversión',
   'Alimentación',
   'Transporte',
   'Entretenimiento',
@@ -24,44 +25,99 @@ const categories = [
   'Educación',
   'Otros'
 ];
+const categoriasGastos = [
+  'Alimentación',
+  'Transporte',
+  'Entretenimiento',
+  'Salud',
+  'Educación',
+  'Otros'
+];
+const categoriasIngresos = [
+  'Salario',
+  'Freelance',
+  'Inversión',
+  'Otros'
+];
 
-const TransactionFormScreen = ({ transaction }) => {
+const TransactionFormScreen = () => {
   const navigation = useNavigation();
-  const [amount, setAmount] = useState(transaction?.amount.toString() || '');
-  const [type, setType] = useState(transaction?.type || 'income');
-  const [category, setCategory] = useState(transaction?.category || categories[0]);
-  const [date, setDate] = useState(transaction?.date || new Date().toISOString().split('T')[0]);
-  const [description, setDescription] = useState(transaction?.description || '');
+  const route = useRoute();
+  const { transaction } = route.params || {};
+
+  const [amount, setAmount] = useState(transaction?.monto.toString() || '');
+  const [type, setType] = useState(transaction?.tipo || 'ingreso');
+  const [category, setCategory] = useState(transaction?.categoria || (transaction?.tipo === 'gasto' ? categoriasGastos[0] : categoriasIngresos[0]));
+  const [date, setDate] = useState(transaction?.fecha || new Date().toISOString().split('T')[0]);
+  const [description, setDescription] = useState(transaction?.descripcion || '');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (transaction) {
-      setAmount(transaction.amount.toString());
-      setType(transaction.type);
-      setCategory(transaction.category);
-      setDate(transaction.date);
-      setDescription(transaction.description);
+      setAmount(transaction.monto.toString());
+      setType(transaction.tipo);
+      setCategory(transaction.categoria);
+      setDate(transaction.fecha);
+      setDescription(transaction.descripcion);
     }
   }, [transaction]);
 
-  const handleSubmit = () => {
-    if (amount && category && date) {
-      Alert.alert(
-        'Éxito',
-        'Transacción guardada exitosamente',
-        [
-          { text: 'OK', onPress: () => navigation.goBack() }
-        ]
-      );
-    } else {
+  const handleSubmit = async () => {
+    if (!amount || !category || !date) {
       Alert.alert(
         'Error',
         'Por favor completa los campos requeridos (monto, categoría y fecha)',
         [{ text: 'OK' }]
       );
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const sesion = await DatabaseService.obtenerSesion();
+
+      if (!sesion) {
+        Alert.alert('Error', 'No hay sesión activa');
+        return;
+      }
+
+      if (transaction) {
+        // Actualizar
+        await DatabaseService.actualizarTransaccion(
+          transaction.id,
+          amount,
+          type,
+          category,
+          date,
+          description
+        );
+        Alert.alert('Éxito', 'Transacción actualizada correctamente', [
+          { text: 'OK', onPress: () => navigation.goBack() }
+        ]);
+      } else {
+        // Crear
+        await DatabaseService.crearTransaccion(
+          sesion.id,
+          amount,
+          type,
+          category,
+          date,
+          description
+        );
+        Alert.alert('Éxito', 'Transacción creada correctamente', [
+          { text: 'OK', onPress: () => navigation.goBack() }
+        ]);
+      }
+    } catch (error) {
+      console.error('Error al guardar transacción:', error);
+      Alert.alert('Error', 'No se pudo guardar la transacción');
+    } finally {
+      setLoading(false);
     }
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleDateString('es-ES');
   };
@@ -112,13 +168,16 @@ const TransactionFormScreen = ({ transaction }) => {
                   <TouchableOpacity
                     style={[
                       styles.typeButton,
-                      type === 'income' && styles.activeTypeButton
+                      type === 'ingreso' && styles.activeTypeButton
                     ]}
-                    onPress={() => setType('income')}
+                    onPress={() => {
+                      setType('ingreso');
+                      setCategory(categoriasIngresos[0]);
+                    }}
                   >
                     <Text style={[
                       styles.typeButtonText,
-                      type === 'income' && styles.activeTypeButtonText
+                      type === 'ingreso' && styles.activeTypeButtonText
                     ]}>
                       Ingreso
                     </Text>
@@ -127,13 +186,16 @@ const TransactionFormScreen = ({ transaction }) => {
                   <TouchableOpacity
                     style={[
                       styles.typeButton,
-                      type === 'expense' && styles.activeTypeButton
+                      type === 'gasto' && styles.activeTypeButton
                     ]}
-                    onPress={() => setType('expense')}
+                    onPress={() => {
+                      setType('gasto');
+                      setCategory(categoriasGastos[0]);
+                    }}
                   >
                     <Text style={[
                       styles.typeButtonText,
-                      type === 'expense' && styles.activeTypeButtonText
+                      type === 'gasto' && styles.activeTypeButtonText
                     ]}>
                       Gasto
                     </Text>
@@ -145,7 +207,7 @@ const TransactionFormScreen = ({ transaction }) => {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Categoría</Text>
                 <View style={styles.categoryContainer}>
-                  {categories.map((cat) => (
+                  {(type === 'ingreso' ? categoriasIngresos : categoriasGastos).map((cat) => (
                     <TouchableOpacity
                       key={cat}
                       style={[
@@ -176,7 +238,6 @@ const TransactionFormScreen = ({ transaction }) => {
                     placeholder="YYYY-MM-DD"
                     placeholderTextColor="#9ca3af"
                   />
-                  <Text style={styles.dateIcon}>📅</Text>
                 </View>
                 <Text style={styles.dateHelper}>
                   Formato: {formatDate(date || new Date().toISOString().split('T')[0])}
@@ -201,11 +262,12 @@ const TransactionFormScreen = ({ transaction }) => {
               {/* Submit Button */}
               <View style={styles.submitContainer}>
                 <TouchableOpacity
-                  style={styles.submitButton}
+                  style={[styles.submitButton, loading && { opacity: 0.7 }]}
                   onPress={handleSubmit}
+                  disabled={loading}
                 >
                   <Text style={styles.submitButtonText}>
-                    {transaction ? 'Actualizar' : 'Agregar'}
+                    {loading ? 'Guardando...' : (transaction ? 'Actualizar' : 'Agregar')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -337,10 +399,6 @@ const styles = StyleSheet.create({
     flex: 1,
     color: 'white',
     fontSize: 16,
-  },
-  dateIcon: {
-    fontSize: 20,
-    marginLeft: 8,
   },
   dateHelper: {
     color: '#6b7280',
