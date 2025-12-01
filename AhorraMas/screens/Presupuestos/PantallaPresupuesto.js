@@ -97,7 +97,7 @@ const PantallaPresupuesto = ({ presupuestos = [], onUpdateBudget }) => {
             style={styles.botonAgregarCategoria}
             onPress={manejarAgregarCategoria}
           >
-            <Text style={styles.textoAgregarCategoria}>+ Agregar Categoría</Text>
+            <Text style={styles.textoAgregarCategoria}>+ Agregar Presupuesto</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
