@@ -1,7 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
-import transaccionController from '../../controllers/TransaccionesController';
-import authController from '../../controllers/AuthController';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,57 +6,24 @@ import {
   StyleSheet,
   FlatList,
   Alert,
-  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 
-const TransactionsListScreen = () => {
+const TransactionsListScreen = ({
+  transactions = [],
+  onDelete,
+  onEdit
+}) => {
   const navigation = useNavigation();
-  const [transactions, setTransactions] = useState([]);
   const [filterType, setFilterType] = useState('all');
   const [filterCategory, setFilterCategory] = useState('all');
-  const [filterDate, setFilterDate] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  // Cargar transacciones
-  const cargarTransacciones = useCallback(async () => {
-    try {
-      setLoading(true);
-      await authController.initialize();
-      const user = await authController.obtenerUsuarioActual();
-      if (user) {
-        const data = await transaccionController.obtenerTransacciones(user.id);
-        setTransactions(data);
-      }
-    } catch (error) {
-      console.error('Error al cargar transacciones:', error);
-      Alert.alert('Error', 'No se pudieron cargar las transacciones');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Load on mount only
-  useEffect(() => {
-    cargarTransacciones();
-    // Removidos los listeners automáticos - solo actualización manual con botón 🔄
-  }, [cargarTransacciones]);
-
-  // Cargar al enfocar la pantalla
-  useFocusEffect(
-    React.useCallback(() => {
-      cargarTransacciones();
-    }, [cargarTransacciones])
-  );
-
-  const categories = Array.from(new Set(transactions.map(t => t.categoria)));
+  const categories = Array.from(new Set(transactions.map(t => t.category)));
 
   const filteredTransactions = transactions.filter(t => {
-    if (filterType !== 'all' && t.tipo !== filterType) return false;
-    if (filterCategory !== 'all' && t.categoria !== filterCategory) return false;
-    // Filtro de fecha simple (coincidencia exacta de string YYYY-MM-DD)
-    if (filterDate && !t.fecha.startsWith(filterDate)) return false;
+    if (filterType !== 'all' && t.type !== filterType) return false;
+    if (filterCategory !== 'all' && t.category !== filterCategory) return false;
     return true;
   });
 
@@ -69,69 +33,50 @@ const TransactionsListScreen = () => {
       '¿Estás seguro de que quieres eliminar esta transacción?',
       [
         { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await transaccionController.eliminarTransaccion(id);
-              // Recargar manualmente ya que removimos los listeners automáticos
-              await cargarTransacciones();
-            } catch (error) {
-              console.error('Error al eliminar:', error);
-              Alert.alert('Error', 'No se pudo eliminar la transacción');
-            }
-          }
-        }
+        { text: 'Eliminar', style: 'destructive', onPress: () => onDelete(id) }
       ]
     );
-  };
-
-  const handleEdit = (transaction) => {
-    navigation.navigate('FormularioTransaccion', { transaction });
   };
 
   const renderTransaction = ({ item: transaction }) => (
     <View style={styles.transactionItem}>
       <View style={styles.transactionContent}>
         <View style={styles.transactionHeader}>
-          <Text style={styles.transactionCategory}>{transaction.categoria}</Text>
+          <Text style={styles.transactionCategory}>{transaction.category}</Text>
           <View style={[
             styles.typeBadge,
-            transaction.tipo === 'ingreso' ? styles.incomeBadge : styles.expenseBadge
+            transaction.type === 'income' ? styles.incomeBadge : styles.expenseBadge
           ]}>
             <Text style={styles.typeBadgeText}>
-              {transaction.tipo === 'ingreso' ? 'Ingreso' : 'Gasto'}
+              {transaction.type === 'income' ? 'Ingreso' : 'Gasto'}
             </Text>
           </View>
         </View>
-        <Text style={styles.transactionDescription}>{transaction.descripcion}</Text>
-        <Text style={styles.transactionDate}>
-          {new Date(transaction.fecha).toLocaleDateString()}
-        </Text>
+        <Text style={styles.transactionDescription}>{transaction.description}</Text>
+        <Text style={styles.transactionDate}>{transaction.date}</Text>
       </View>
 
       <View style={styles.transactionActions}>
         <Text style={[
           styles.transactionAmount,
-          transaction.tipo === 'ingreso' ? styles.incomeAmount : styles.expenseAmount
+          transaction.type === 'income' ? styles.incomeAmount : styles.expenseAmount
         ]}>
-          {transaction.tipo === 'ingreso' ? '+' : '-'}${transaction.monto}
+          {transaction.type === 'income' ? '+' : '-'}${transaction.amount}
         </Text>
 
         <View style={styles.actionButtons}>
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={() => handleEdit(transaction)}
+            onPress={() => onEdit(transaction)}
           >
-            <Text style={styles.actionButtonText}>Editar</Text>
+            <Text style={styles.actionButtonText}>✏️</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => handleDelete(transaction.id)}
           >
-            <Text style={[styles.actionButtonText, styles.deleteButtonText]}>Eliminar</Text>
+            <Text style={styles.actionButtonText}>🗑️</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -161,22 +106,17 @@ const TransactionsListScreen = () => {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.titleText}>Transacciones</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-            <TouchableOpacity onPress={cargarTransacciones}>
-              <Text style={styles.helpText}>↻</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate('MiCuenta')}>
-              <Text style={styles.helpText}>Mi Cuenta</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity onPress={() => navigation.navigate('MiCuenta')}>
+            <Text style={styles.helpText}>Mi Cuenta</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Filters */}
         <View style={styles.filtersContainer}>
           <View style={styles.typeFilters}>
             {renderFilterButton('all', 'Todas')}
-            {renderFilterButton('ingreso', 'Ingresos')}
-            {renderFilterButton('gasto', 'Gastos')}
+            {renderFilterButton('income', 'Ingresos')}
+            {renderFilterButton('expense', 'Gastos')}
           </View>
 
           {/* Category Filter - Simplified as buttons for now */}
@@ -196,9 +136,9 @@ const TransactionsListScreen = () => {
               </Text>
             </TouchableOpacity>
 
-            {categories.slice(0, 3).map((cat, index) => (
+            {categories.slice(0, 3).map(cat => (
               <TouchableOpacity
-                key={`${cat}-${index}`}
+                key={cat}
                 style={[
                   styles.categoryButton,
                   filterCategory === cat && styles.activeCategoryButton
@@ -216,30 +156,17 @@ const TransactionsListScreen = () => {
           </View>
         </View>
 
-        <View style={styles.filterContainer}>
-          <Text style={styles.filterLabel}>Filtrar por fecha (YYYY-MM-DD):</Text>
-          <TextInput
-            style={styles.filterInput}
-            value={filterDate}
-            onChangeText={setFilterDate}
-            placeholder="2025-11-29"
-            placeholderTextColor="#9ca3af"
-          />
-        </View>
-
         {/* Transactions List */}
         <View style={styles.listContainer}>
           {filteredTransactions.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>
-                {loading ? 'Cargando...' : 'No hay transacciones'}
-              </Text>
+              <Text style={styles.emptyText}>No hay transacciones</Text>
             </View>
           ) : (
             <FlatList
               data={filteredTransactions}
               renderItem={renderTransaction}
-              keyExtractor={(item) => item.id ? item.id.toString() : Math.random().toString()}
+              keyExtractor={(item) => item.id}
               contentContainerStyle={styles.listContent}
               showsVerticalScrollIndicator={false}
             />
@@ -415,27 +342,12 @@ const styles = StyleSheet.create({
   actionButtons: {
     flexDirection: 'row',
     gap: 8,
-    alignItems: 'center',
   },
   actionButton: {
     padding: 8,
   },
   actionButtonText: {
-    color: '#ffffffff',
-    fontWeight: '600',
-    backgroundColor: '#2563eb',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginLeft: 8,
-  },
-  deleteButtonText: {
-    backgroundColor: '#ef4444',
-    color: '#ffffffff',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginLeft: 8,
+    fontSize: 16,
   },
   addButton: {
     backgroundColor: 'white',
@@ -474,20 +386,6 @@ const styles = StyleSheet.create({
   },
   activeNavText: {
     color: 'white',
-  },
-  filterContainer: {
-    marginBottom: 16,
-  },
-  filterInput: {
-    backgroundColor: '#6b7280',
-    color: 'white',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  filterLabel: {
-    color: '#9ca3af',
-    marginBottom: 8,
   },
 });
 

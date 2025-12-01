@@ -640,10 +640,18 @@ class DatabaseService {
                 transacciones = transacciones.filter(t => t.categoria === categoria);
             }
             if (fechaInicio) {
-                transacciones = transacciones.filter(t => new Date(t.fecha) >= new Date(fechaInicio));
+                transacciones = transacciones.filter(t => {
+                    const fechaTransaccion = new Date(t.fecha).toISOString().split('T')[0];
+                    const fechaInicioStr = new Date(fechaInicio).toISOString().split('T')[0];
+                    return fechaTransaccion >= fechaInicioStr;
+                });
             }
             if (fechaFin) {
-                transacciones = transacciones.filter(t => new Date(t.fecha) <= new Date(fechaFin));
+                transacciones = transacciones.filter(t => {
+                    const fechaTransaccion = new Date(t.fecha).toISOString().split('T')[0];
+                    const fechaFinStr = new Date(fechaFin).toISOString().split('T')[0];
+                    return fechaTransaccion <= fechaFinStr;
+                });
             }
 
             // Ordenar por fecha descendente
@@ -668,11 +676,11 @@ class DatabaseService {
                 params.push(categoria);
             }
             if (fechaInicio) {
-                query += ' AND fecha >= ?';
+                query += ' AND DATE(fecha) >= DATE(?)';
                 params.push(fechaInicio);
             }
             if (fechaFin) {
-                query += ' AND fecha <= ?';
+                query += ' AND DATE(fecha) <= DATE(?)';
                 params.push(fechaFin);
             }
 
@@ -802,8 +810,9 @@ class DatabaseService {
 
 
     async obtenerEstadisticasMensuales(usuarioId, mes, anio) {
-        const fechaInicio = new Date(anio, mes - 1, 1).toISOString();
-        const fechaFin = new Date(anio, mes, 0, 23, 59, 59).toISOString();
+        // Crear fechas usando UTC para evitar problemas de zona horaria
+        const fechaInicio = new Date(Date.UTC(anio, mes - 1, 1, 0, 0, 0)).toISOString();
+        const fechaFin = new Date(Date.UTC(anio, mes, 0, 23, 59, 59)).toISOString();
 
         const transacciones = await this.obtenerTransaccionesPorUsuario(usuarioId, {
             fechaInicio,
@@ -1034,9 +1043,9 @@ class DatabaseService {
 
         if (!presupuesto) return;
 
-        // Calcular el monto gastado en esa categoría en ese mes
-        const fechaInicio = new Date(anio, mes - 1, 1).toISOString();
-        const fechaFin = new Date(anio, mes, 0, 23, 59, 59).toISOString();
+        // Calcular el monto gastado en esa categoría en ese mes usando UTC
+        const fechaInicio = new Date(Date.UTC(anio, mes - 1, 1, 0, 0, 0)).toISOString();
+        const fechaFin = new Date(Date.UTC(anio, mes, 0, 23, 59, 59)).toISOString();
 
         const transacciones = await this.obtenerTransaccionesPorUsuario(usuarioId, {
             tipo: 'gasto',

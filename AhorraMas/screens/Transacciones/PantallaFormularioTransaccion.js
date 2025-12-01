@@ -45,10 +45,18 @@ const TransactionFormScreen = () => {
   const route = useRoute();
   const { transaction } = route.params || {};
 
+  // Función para obtener la fecha local en formato YYYY-MM-DD
+  const getLocalDateString = (date = new Date()) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [amount, setAmount] = useState(transaction?.monto.toString() || '');
   const [type, setType] = useState(transaction?.tipo || 'ingreso');
   const [category, setCategory] = useState(transaction?.categoria || (transaction?.tipo === 'gasto' ? categoriasGastos[0] : categoriasIngresos[0]));
-  const [date, setDate] = useState(transaction?.fecha || new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(transaction?.fecha ? transaction.fecha.split('T')[0] : getLocalDateString());
   const [description, setDescription] = useState(transaction?.descripcion || '');
   const [loading, setLoading] = useState(false);
 
@@ -57,7 +65,8 @@ const TransactionFormScreen = () => {
       setAmount(transaction.monto.toString());
       setType(transaction.tipo);
       setCategory(transaction.categoria);
-      setDate(transaction.fecha);
+      // Extraer solo la parte de la fecha (YYYY-MM-DD) sin la zona horaria
+      setDate(transaction.fecha.split('T')[0]);
       setDescription(transaction.descripcion);
     }
   }, [transaction]);
@@ -88,7 +97,7 @@ const TransactionFormScreen = () => {
           amount,
           type,
           category,
-          date,
+          `${date}T12:00:00.000Z`, // Agregar hora del mediodía para evitar problemas de zona horaria
           description
         );
         Alert.alert('Éxito', 'Transacción actualizada correctamente', [
@@ -101,7 +110,7 @@ const TransactionFormScreen = () => {
           amount,
           type,
           category,
-          date,
+          `${date}T12:00:00.000Z`, // Agregar hora del mediodía para evitar problemas de zona horaria
           description
         );
         Alert.alert('Éxito', 'Transacción creada correctamente', [
@@ -118,8 +127,14 @@ const TransactionFormScreen = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES');
+    // Parsear la fecha directamente desde el formato YYYY-MM-DD sin conversión a Date
+    const [year, month, day] = dateString.split('-');
+    const date = new Date(year, month - 1, day); // Mes es 0-indexed
+    return date.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
   };
 
   return (
@@ -240,7 +255,7 @@ const TransactionFormScreen = () => {
                   />
                 </View>
                 <Text style={styles.dateHelper}>
-                  Formato: {formatDate(date || new Date().toISOString().split('T')[0])}
+                  Formato: {formatDate(date || getLocalDateString())}
                 </Text>
               </View>
 

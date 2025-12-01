@@ -9,9 +9,36 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const HistoryScreen = ({ transactions = [], activeTab, onTabChange }) => {
+  // Función para formatear fechas de forma amigable
+  const formatDateHeader = (dateString) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    // Comparar solo las fechas (sin horas)
+    const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const yesterdayOnly = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+
+    if (dateOnly.getTime() === todayOnly.getTime()) {
+      return 'Hoy';
+    } else if (dateOnly.getTime() === yesterdayOnly.getTime()) {
+      return 'Ayer';
+    } else {
+      return date.toLocaleDateString('es-ES', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+  };
+
   // Group transactions by date
   const groupedTransactions = transactions.reduce((acc, transaction) => {
-    const date = transaction.fecha;
+    // Extraer solo la parte de fecha (YYYY-MM-DD) para agrupar correctamente
+    const date = transaction.fecha.split('T')[0];
     if (!acc[date]) {
       acc[date] = [];
     }
@@ -38,7 +65,7 @@ const HistoryScreen = ({ transactions = [], activeTab, onTabChange }) => {
 
   const renderDateGroup = ({ item: date }) => (
     <View style={styles.dateGroup}>
-      <Text style={styles.dateHeader}>{date}</Text>
+      <Text style={styles.dateHeader}>{formatDateHeader(date)}</Text>
       {groupedTransactions[date].map((transaction, index) => (
         <View key={`${transaction.id}-${index}`}>
           {renderTransaction(transaction)}
