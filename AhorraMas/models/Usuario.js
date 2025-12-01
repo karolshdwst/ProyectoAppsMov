@@ -1,11 +1,13 @@
 export class Usuario {
-    constructor(id, nombreCompleto, correo, contrasena, telefono, balanceTotal, fechaRegistro) {
+    constructor(id, nombreCompleto, correo, contrasena, telefono, balanceTotal = 0, metaAhorro = 0, porcentajeAhorro = 100, fechaRegistro) {
         this.id = id;
         this.nombreCompleto = nombreCompleto;
         this.correo = correo;
         this.contrasena = contrasena;
         this.telefono = telefono;
-        this.balanceTotal = balanceTotal || 0;
+        this.balanceTotal = balanceTotal;
+        this.metaAhorro = metaAhorro;
+        this.porcentajeAhorro = porcentajeAhorro;
         this.fechaRegistro = fechaRegistro || new Date().toISOString();
     }
 
@@ -74,6 +76,8 @@ export class Usuario {
             correo: this.correo,
             telefono: this.telefono,
             balanceTotal: this.balanceTotal,
+            metaAhorro: this.metaAhorro,
+            porcentajeAhorro: this.porcentajeAhorro,
             fechaRegistro: this.fechaRegistro
         };
     }

@@ -6,10 +6,6 @@ export class TransaccionController {
         this.listeners = [];
     }
 
-    async initialize() {
-        await DatabaseService.initialize();
-    }
-
     // CREAR TRANSACCIÓN
     async crearTransaccion(usuarioId, monto, tipo, categoria, fecha, descripcion) {
         try {
@@ -117,7 +113,7 @@ export class TransaccionController {
     async buscarTransacciones(usuarioId, filtros) {
         try {
             const { tipo, categoria, fechaInicio, fechaFin } = filtros;
-            
+
             return await this.obtenerTransacciones(usuarioId, {
                 tipo,
                 categoria,
@@ -310,3 +306,6 @@ export class TransaccionController {
         this.listeners.forEach(callback => callback());
     }
 }
+
+// Exportar como singleton
+export default new TransaccionController();

@@ -6,24 +6,23 @@ import {
     ScrollView,
     Dimensions,
     ActivityIndicator,
+    Modal,
+    TextInput,
+    Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { BarChart, LineChart } from 'react-native-chart-kit';
 import React, { useEffect, useState, useCallback } from "react";
-import { TransaccionController } from "../../controllers/TransaccionesController";
-import { PresupuestoController } from "../../controllers/PresupuestoController";
-import { AuthController } from "../../controllers/AuthController";
-
-const transaccionController = new TransaccionController();
-const presupuestoController = new PresupuestoController();
-const authController = new AuthController();
+import transaccionController from '../../controllers/TransaccionesController';
+import presupuestoController from '../../controllers/PresupuestoController';
+import authController from '../../controllers/AuthController';
 
 const { width } = Dimensions.get('window');
 
 const DashboardScreen = () => {
     const navigation = useNavigation();
-    
+
     const [usuario, setUsuario] = useState(null);
     const [transactions, setTransactions] = useState([]);
     const [budgets, setBudgets] = useState([]);
@@ -31,23 +30,31 @@ const DashboardScreen = () => {
     const [loading, setLoading] = useState(true);
     const [filtro, setFiltro] = useState("todos");
 
+    // Estados para Meta de Ahorro
+    const [metaAhorro, setMetaAhorro] = useState(0);
+    const [porcentajeAhorro, setPorcentajeAhorro] = useState(100);
+    const [modalMetaVisible, setModalMetaVisible] = useState(false);
+    const [nuevaMetaInput, setNuevaMetaInput] = useState('');
+    const [nuevoPorcentajeInput, setNuevoPorcentajeInput] = useState('100');
+
 
     const cargarDatos = useCallback(async () => {
         try {
             setLoading(true);
-            
+
+            // Solo inicializar AuthController que necesita cargar la sesión
             await authController.initialize();
-            await transaccionController.initialize();
-            await presupuestoController.initialize();
 
             const user = await authController.obtenerUsuarioActual();
-            
+
             if (!user) {
                 navigation.replace('Login');
                 return;
             }
 
             setUsuario(user);
+            setMetaAhorro(user.metaAhorro || 0);
+            setPorcentajeAhorro(user.porcentajeAhorro || 100);
 
             // Obtener transacciones del usuario
             const transaccionesDB = await transaccionController.obtenerTransacciones(user.id);
@@ -72,22 +79,12 @@ const DashboardScreen = () => {
         } finally {
             setLoading(false);
         }
-    }, [navigation]);
+    }, []); // Sin dependencias para evitar que cambie la referencia
 
 
     useEffect(() => {
         cargarDatos();
-
-        
-        transaccionController.addListener(cargarDatos);
-        presupuestoController.addListener(cargarDatos);
-        authController.addListener(cargarDatos);
-
-        return () => {
-            transaccionController.removeListener(cargarDatos);
-            presupuestoController.removeListener(cargarDatos);
-            authController.removeListener(cargarDatos);
-        };
+        // Removidos los listeners automáticos - solo actualización manual con botón 🔄
     }, [cargarDatos]);
 
     const totalIncome = transactions
@@ -99,9 +96,9 @@ const DashboardScreen = () => {
         .reduce((sum, t) => sum + t.monto, 0);
 
     const balance = totalIncome - totalExpense;
-    const savings = balance * 0.4;
+    const savings = balance * (porcentajeAhorro / 100);
 
-   
+
     const meses = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
 
     const ingresosPorMes = new Array(12).fill(0);
@@ -110,7 +107,7 @@ const DashboardScreen = () => {
     transactions.forEach(t => {
         const fecha = new Date(t.fecha);
         const mes = fecha.getMonth();
-        
+
         if (t.tipo === "ingreso") {
             ingresosPorMes[mes] += t.monto;
         }
@@ -136,7 +133,32 @@ const DashboardScreen = () => {
         ];
     }
 
-    
+
+    const guardarMeta = async () => {
+        try {
+            const meta = parseFloat(nuevaMetaInput);
+            const porcentaje = parseInt(nuevoPorcentajeInput);
+
+            if (isNaN(meta) || meta < 0) {
+                Alert.alert('Error', 'Ingresa un monto válido para la meta');
+                return;
+            }
+            if (isNaN(porcentaje) || porcentaje < 0 || porcentaje > 100) {
+                Alert.alert('Error', 'Ingresa un porcentaje válido (0-100)');
+                return;
+            }
+
+            await authController.actualizarMetaAhorro(usuario.id, meta, porcentaje);
+            setMetaAhorro(meta);
+            setPorcentajeAhorro(porcentaje);
+            setModalMetaVisible(false);
+            Alert.alert('Éxito', 'Configuración de ahorro actualizada');
+        } catch (error) {
+            console.error('Error al guardar meta:', error);
+            Alert.alert('Error', 'No se pudo actualizar la configuración');
+        }
+    };
+
     const renderBudgetItem = (budget, index) => {
         const percentage = (budget.montoGastado / budget.montoLimite) * 100;
         const isOverBudget = percentage > 100;
@@ -182,15 +204,20 @@ const DashboardScreen = () => {
                     contentContainerStyle={styles.scrollContainer}
                     showsVerticalScrollIndicator={false}
                 >
-                 
+
                     <View style={styles.header}>
                         <Text style={styles.titleText}>Inicio</Text>
-                        <TouchableOpacity onPress={() => navigation.navigate('MiCuenta')}>
-                            <Text style={styles.helpText}>Mi Cuenta</Text>
-                        </TouchableOpacity>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+                            <TouchableOpacity onPress={cargarDatos}>
+                                <Text style={styles.helpText}>↻</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => navigation.navigate('MiCuenta')}>
+                                <Text style={styles.helpText}>Mi Cuenta</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
 
-                    
+
                     <View style={styles.balanceCard}>
                         <Text style={styles.balanceLabel}>Balance</Text>
                         <Text style={styles.balanceAmount}>${balance.toFixed(0)}</Text>
@@ -207,23 +234,40 @@ const DashboardScreen = () => {
                         </View>
                     </View>
 
-                   
-                    <View style={styles.savingsContainer}>
+
+                    <TouchableOpacity
+                        style={styles.savingsContainer}
+                        onPress={() => {
+                            setNuevaMetaInput(metaAhorro.toString());
+                            setNuevoPorcentajeInput(porcentajeAhorro.toString());
+                            setModalMetaVisible(true);
+                        }}
+                    >
                         <View style={styles.savingsHeader}>
-                            <Text style={styles.savingsTitle}>Línea de Ahorro</Text>
-                            <Text style={styles.savingsAmount}>${savings.toFixed(0)} →</Text>
+                            <Text style={styles.savingsTitle}>Meta de Ahorro</Text>
+                            <Text style={styles.savingsAmount}>
+                                ${savings.toFixed(0)} / ${metaAhorro > 0 ? metaAhorro.toFixed(0) : '---'}
+                            </Text>
                         </View>
                         <View style={styles.savingsProgressContainer}>
                             <View
                                 style={[
                                     styles.savingsProgress,
-                                    { width: `${Math.min((savings / (balance || 1)) * 100, 100)}%` }
+                                    {
+                                        width: `${metaAhorro > 0 ? Math.min((savings / metaAhorro) * 100, 100) : 0}%`,
+                                        backgroundColor: savings >= metaAhorro && metaAhorro > 0 ? '#22c55e' : '#06b6d4'
+                                    }
                                 ]}
                             />
                         </View>
-                    </View>
+                        <Text style={{ color: '#9ca3af', fontSize: 12, marginTop: 8, textAlign: 'center' }}>
+                            {metaAhorro > 0
+                                ? `${((savings / metaAhorro) * 100).toFixed(1)}% de tu meta`
+                                : 'Toca para establecer una meta de ahorro'}
+                        </Text>
+                    </TouchableOpacity>
 
-                   
+
                     <View style={styles.comparisonCard}>
                         <Text style={styles.comparisonTitle}>Comparación Mensual</Text>
 
@@ -234,8 +278,8 @@ const DashboardScreen = () => {
                             </View>
                             <View style={styles.comparisonBarContainer}>
                                 <View style={[
-                                    styles.comparisonBar, 
-                                    { 
+                                    styles.comparisonBar,
+                                    {
                                         backgroundColor: '#22c55e',
                                         width: '100%'
                                     }
@@ -272,13 +316,13 @@ const DashboardScreen = () => {
                         </View>
                     )}
 
-                 
+
                     <View style={{ marginBottom: 40 }}>
                         <Text style={{ color: "white", fontSize: 18, fontWeight: "700", marginBottom: 12 }}>
                             Gráfica de Ingresos y Gastos
                         </Text>
 
-                      
+
                         <View style={{ marginBottom: 12, padding: 12, backgroundColor: '#4b5563', borderRadius: 8 }}>
                             <Text style={{ color: '#d1d5db', fontSize: 12 }}>
                                 Total de transacciones: {transactions.length}
@@ -291,7 +335,7 @@ const DashboardScreen = () => {
                             </Text>
                         </View>
 
-                      
+
                         <View style={{ flexDirection: "row", gap: 10, marginBottom: 12 }}>
                             <TouchableOpacity
                                 style={[
@@ -326,7 +370,7 @@ const DashboardScreen = () => {
 
                         {transactions.length > 0 ? (
                             <>
-                              
+
                                 <Text style={{ color: "#d1d5db", marginBottom: 6 }}>Línea</Text>
                                 <LineChart
                                     data={{
@@ -361,6 +405,76 @@ const DashboardScreen = () => {
                     <View style={{ height: 30 }} />
                 </ScrollView>
             </View>
+            {/* Modal para Editar Meta */}
+            <Modal
+                animationType="fade"
+                transparent={true}
+                visible={modalMetaVisible}
+                onRequestClose={() => setModalMetaVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Configurar Ahorro</Text>
+
+                        <Text style={styles.inputLabel}>Meta Total (Monto Objetivo)</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Ej. 5000"
+                            placeholderTextColor="#9ca3af"
+                            keyboardType="numeric"
+                            value={nuevaMetaInput}
+                            onChangeText={setNuevaMetaInput}
+                        />
+
+                        <Text style={styles.inputLabel}>¿Cuánto de tu balance es ahorro?</Text>
+                        <View style={styles.percentageButtons}>
+                            <TouchableOpacity
+                                style={[styles.percentageButton, nuevoPorcentajeInput === '100' && styles.percentageButtonActive]}
+                                onPress={() => setNuevoPorcentajeInput('100')}
+                            >
+                                <Text style={[styles.percentageButtonText, nuevoPorcentajeInput === '100' && styles.percentageButtonTextActive]}>Todo (100%)</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.percentageButton, nuevoPorcentajeInput !== '100' && styles.percentageButtonActive]}
+                                onPress={() => setNuevoPorcentajeInput('20')}
+                            >
+                                <Text style={[styles.percentageButtonText, nuevoPorcentajeInput !== '100' && styles.percentageButtonTextActive]}>Personalizado</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        {nuevoPorcentajeInput !== '100' && (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
+                                <TextInput
+                                    style={[styles.input, { marginBottom: 0, flex: 1 }]}
+                                    placeholder="%"
+                                    placeholderTextColor="#9ca3af"
+                                    keyboardType="numeric"
+                                    value={nuevoPorcentajeInput}
+                                    onChangeText={setNuevoPorcentajeInput}
+                                    maxLength={3}
+                                />
+                                <Text style={{ color: 'white', fontSize: 18, marginLeft: 8 }}>%</Text>
+                            </View>
+                        )}
+
+                        <View style={styles.modalButtons}>
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.cancelButton]}
+                                onPress={() => setModalMetaVisible(false)}
+                            >
+                                <Text style={styles.cancelButtonText}>Cancelar</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.saveButton]}
+                                onPress={guardarMeta}
+                            >
+                                <Text style={styles.saveButtonText}>Guardar</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 };
@@ -564,6 +678,96 @@ const styles = StyleSheet.create({
     progressBar: {
         height: '100%',
         borderRadius: 4,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        backgroundColor: '#3a3a3a',
+        borderRadius: 16,
+        padding: 24,
+        width: '85%',
+        maxWidth: 400,
+    },
+    modalTitle: {
+        color: 'white',
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    modalSubtitle: {
+        color: '#9ca3af',
+        fontSize: 14,
+        marginBottom: 24,
+        textAlign: 'center',
+    },
+    input: {
+        backgroundColor: '#4b5563',
+        color: 'white',
+        padding: 12,
+        borderRadius: 8,
+        marginBottom: 24,
+        fontSize: 16,
+    },
+    inputLabel: {
+        color: '#d1d5db',
+        fontSize: 14,
+        marginBottom: 8,
+        fontWeight: '500',
+    },
+    percentageButtons: {
+        flexDirection: 'row',
+        gap: 12,
+        marginBottom: 16,
+    },
+    percentageButton: {
+        flex: 1,
+        backgroundColor: '#4b5563',
+        paddingVertical: 10,
+        borderRadius: 8,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#4b5563',
+    },
+    percentageButtonActive: {
+        backgroundColor: 'white',
+        borderColor: 'white',
+    },
+    percentageButtonText: {
+        color: '#d1d5db',
+        fontWeight: '500',
+    },
+    percentageButtonTextActive: {
+        color: '#374151',
+        fontWeight: '600',
+    },
+    modalButtons: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+    modalButton: {
+        flex: 1,
+        paddingVertical: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    cancelButton: {
+        backgroundColor: 'white',
+    },
+    saveButton: {
+        backgroundColor: 'white',
+    },
+    cancelButtonText: {
+        color: '#374151',
+        fontWeight: '600',
+    },
+    saveButtonText: {
+        color: '#374151',
+        fontWeight: '600',
     },
 });
 

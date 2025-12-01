@@ -1,10 +1,13 @@
 import { Platform } from 'react-native';
 import * as SQLite from 'expo-sqlite';
 import * as Crypto from 'expo-crypto';
+import EmailService from '../services/EmailService';
 
 class DatabaseService {
     constructor() {
         this.db = null;
+        this.isInitialized = false;
+        this.initPromise = null;
         this.storageKeys = {
             usuarios: 'app_usuarios',
             transacciones: 'app_transacciones',
@@ -16,12 +19,34 @@ class DatabaseService {
     // INICIALIZACIÓN
 
     async initialize() {
-        if (Platform.OS === 'web') {
-            console.log('Usando LocalStorage para web');
-            this.initializeWebStorage();
-        } else {
-            console.log('Usando SQLite para móvil');
-            await this.initializeSQLite();
+        // Si ya está inicializado o en proceso, retornar el promise existente
+        if (this.isInitialized) {
+            return Promise.resolve();
+        }
+        if (this.initPromise) {
+            return this.initPromise;
+        }
+
+        this.initPromise = (async () => {
+            if (Platform.OS === 'web') {
+                console.log('Usando LocalStorage para web');
+                this.initializeWebStorage();
+            } else {
+                console.log('Usando SQLite para móvil');
+                await this.initializeSQLite();
+            }
+            this.isInitialized = true;
+            console.log('DatabaseService inicializado correctamente');
+        })();
+
+        return this.initPromise;
+    }
+
+    // Método helper para asegurar que la BD está inicializada antes de usarla
+    async waitForInitialization() {
+        if (!this.isInitialized) {
+            console.log('Esperando a que la base de datos se inicialice...');
+            await this.initialize();
         }
     }
 
@@ -50,6 +75,8 @@ class DatabaseService {
                 contrasena TEXT NOT NULL,
                 telefono TEXT NOT NULL,
                 balanceTotal REAL DEFAULT 0,
+                metaAhorro REAL DEFAULT 0,
+                porcentajeAhorro INTEGER DEFAULT 100,
                 fechaRegistro DATETIME DEFAULT CURRENT_TIMESTAMP,
                 debe_cambiar_password BOOLEAN DEFAULT 0,
                 ultimo_cambio_password DATETIME,
@@ -57,6 +84,15 @@ class DatabaseService {
                 bloqueado_hasta DATETIME NULL
             );
         `);
+
+        // Migración: Agregar columnas si no existen
+        try {
+            await this.db.execAsync(`ALTER TABLE usuarios ADD COLUMN metaAhorro REAL DEFAULT 0;`);
+        } catch (e) { }
+
+        try {
+            await this.db.execAsync(`ALTER TABLE usuarios ADD COLUMN porcentajeAhorro INTEGER DEFAULT 100;`);
+        } catch (e) { }
 
         // Crear tabla de transacciones
         await this.db.execAsync(`
@@ -371,6 +407,26 @@ class DatabaseService {
         }
     }
 
+    async actualizarMetaAhorro(usuarioId, nuevaMeta, nuevoPorcentaje = 100) {
+        await this.waitForInitialization();
+        if (Platform.OS === 'web') {
+            const usuarios = JSON.parse(localStorage.getItem(this.storageKeys.usuarios));
+            const index = usuarios.findIndex(u => u.id === usuarioId);
+            if (index !== -1) {
+                usuarios[index].metaAhorro = parseFloat(nuevaMeta);
+                usuarios[index].porcentajeAhorro = parseInt(nuevoPorcentaje);
+                localStorage.setItem(this.storageKeys.usuarios, JSON.stringify(usuarios));
+                return usuarios[index];
+            }
+        } else {
+            await this.db.runAsync(
+                'UPDATE usuarios SET metaAhorro = ?, porcentajeAhorro = ? WHERE id = ?;',
+                parseFloat(nuevaMeta), parseInt(nuevoPorcentaje), usuarioId
+            );
+            return this.obtenerUsuarioPorId(usuarioId);
+        }
+    }
+
     async actualizarBalanceUsuario(usuarioId, nuevoBalance) {
         if (Platform.OS === 'web') {
             const usuarios = JSON.parse(localStorage.getItem(this.storageKeys.usuarios));
@@ -385,6 +441,26 @@ class DatabaseService {
             await this.db.runAsync(
                 'UPDATE usuarios SET balanceTotal = ? WHERE id = ?;',
                 nuevoBalance, usuarioId
+            );
+            return await this.obtenerUsuarioPorId(usuarioId);
+        }
+    }
+
+    async actualizarPerfil(usuarioId, nombreCompleto, telefono) {
+        if (Platform.OS === 'web') {
+            const usuarios = JSON.parse(localStorage.getItem(this.storageKeys.usuarios));
+            const index = usuarios.findIndex(u => u.id === usuarioId);
+
+            if (index === -1) throw new Error('Usuario no encontrado');
+
+            usuarios[index].nombreCompleto = nombreCompleto;
+            usuarios[index].telefono = telefono;
+            localStorage.setItem(this.storageKeys.usuarios, JSON.stringify(usuarios));
+            return usuarios[index];
+        } else {
+            await this.db.runAsync(
+                'UPDATE usuarios SET nombreCompleto = ?, telefono = ? WHERE id = ?;',
+                nombreCompleto, telefono, usuarioId
             );
             return await this.obtenerUsuarioPorId(usuarioId);
         }
@@ -436,9 +512,14 @@ class DatabaseService {
             );
         }
 
-        // Aquí enviarías el email con la contraseña temporal
-        // Por ahora, la retornamos para que la veas en consola
-        console.log(`Contraseña temporal para ${correo}: ${contrasenatemporal}`);
+        // Enviar email con la contraseña temporal
+        const emailResult = await EmailService.sendPasswordRecovery(correo, usuario.nombreCompleto, contrasenatemporal);
+
+        if (!emailResult.success) {
+            console.error('Error enviando email:', emailResult.error);
+            // Opcional: Podrías lanzar un error o manejarlo silenciosamente
+            // throw new Error('No se pudo enviar el correo de recuperación');
+        }
 
         return {
             success: true,
@@ -499,6 +580,7 @@ class DatabaseService {
     // CRUD TRANSACCIONES
 
     async crearTransaccion(usuarioId, monto, tipo, categoria, fecha, descripcion) {
+        await this.waitForInitialization();
         if (Platform.OS === 'web') {
             const transacciones = JSON.parse(localStorage.getItem(this.storageKeys.transacciones));
 
@@ -541,6 +623,7 @@ class DatabaseService {
     }
 
     async obtenerTransaccionesPorUsuario(usuarioId, filtros = {}) {
+        await this.waitForInitialization();
         const { tipo, categoria, fechaInicio, fechaFin, limite } = filtros;
 
         if (Platform.OS === 'web') {
@@ -761,6 +844,7 @@ class DatabaseService {
     // CRUD PRESUPUESTOS
 
     async crearPresupuesto(usuarioId, categoria, montoLimite, mes, anio) {
+        await this.waitForInitialization();
         const mesActual = mes || new Date().getMonth() + 1;
         const anioActual = anio || new Date().getFullYear();
 
@@ -819,6 +903,7 @@ class DatabaseService {
         }
     }
     async obtenerPresupuestosPorUsuario(usuarioId, mes, anio) {
+        await this.waitForInitialization();
         const mesActual = mes || new Date().getMonth() + 1;
         const anioActual = anio || new Date().getFullYear();
 
@@ -908,7 +993,7 @@ class DatabaseService {
         await this.revertirBalanceTransaccion(usuarioId, transaccionOriginal.monto, transaccionOriginal.tipo);
         await this.actualizarBalanceDespuesDeTransaccion(usuarioId, monto, tipo);
 
-       
+
         await this.actualizarMontoGastadoPresupuesto(usuarioId, transaccionOriginal.categoria, mesOriginal, anioOriginal);
         await this.actualizarMontoGastadoPresupuesto(usuarioId, categoria, mesNuevo, anioNuevo);
 
@@ -942,6 +1027,7 @@ class DatabaseService {
     }
 
     async actualizarMontoGastadoPresupuesto(usuarioId, categoria, mes, anio) {
+        await this.waitForInitialization();
         // Obtener el presupuesto
         const presupuestos = await this.obtenerPresupuestosPorUsuario(usuarioId, mes, anio);
         const presupuesto = presupuestos.find(p => p.categoria === categoria);

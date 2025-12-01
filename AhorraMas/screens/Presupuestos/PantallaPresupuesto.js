@@ -14,11 +14,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { PresupuestoController } from '../../controllers/PresupuestoController';
+import presupuestoController from '../../controllers/PresupuestoController';
+import authController from '../../controllers/AuthController';
 
-const controller = new PresupuestoController();
-
-const PantallaPresupuestoIntegrada = ({ usuarioId = 1 }) => {
+const PantallaPresupuestoIntegrada = () => {
   const navigation = useNavigation();
   const [presupuestos, setPresupuestos] = useState([]);
   const [categoriaFiltro, setCategoriaFiltro] = useState('');
@@ -29,27 +28,35 @@ const PantallaPresupuestoIntegrada = ({ usuarioId = 1 }) => {
   const [categoriaInput, setCategoriaInput] = useState('');
   const [montoInput, setMontoInput] = useState('');
   const [notificaciones, setNotificaciones] = useState([]);
+  const [usuarioId, setUsuarioId] = useState(null);
   const mountedRef = useRef(false);
   const refreshIntervalRef = useRef(null);
 
+  // Obtener usuario actual
   useEffect(() => {
+    const cargarUsuario = async () => {
+      await authController.initialize();
+      const usuario = await authController.obtenerUsuarioActual();
+      if (usuario) {
+        setUsuarioId(usuario.id);
+      } else {
+        navigation.replace('Login');
+      }
+    };
+    cargarUsuario();
+  }, [navigation]);
+
+  useEffect(() => {
+    if (!usuarioId) return; // Solo ejecutar cuando tengamos el usuarioId
+
     let isMounted = true;
     mountedRef.current = true;
 
     const init = async () => {
       try {
-        await controller.initialize();
-        controller.addListener(refreshFromDB);
-        await controller.actualizarTodosLosPresupuestos(usuarioId);
+        // Removidos los listeners automáticos y setInterval - solo actualización manual con botón 🔄
+        await presupuestoController.actualizarTodosLosPresupuestos(usuarioId);
         await refreshFromDB();
-
-        refreshIntervalRef.current = setInterval(async () => {
-          try {
-            await controller.actualizarTodosLosPresupuestos(usuarioId);
-            await refreshFromDB();
-          } catch (e) {
-          }
-        }, 10_000);
       } catch (error) {
         console.error('Inicialización controller/DB falló', error);
         Alert.alert('Error', 'No se pudo inicializar la base de datos de presupuestos.');
@@ -61,14 +68,14 @@ const PantallaPresupuestoIntegrada = ({ usuarioId = 1 }) => {
     return () => {
       isMounted = false;
       mountedRef.current = false;
-      controller.removeListener(refreshFromDB);
-      if (refreshIntervalRef.current) clearInterval(refreshIntervalRef.current);
+      // Removidos cleanup de listeners y clearInterval
     };
-  }, []);
+  }, [usuarioId]); // Agregar usuarioId como dependencia
 
   const refreshFromDB = async () => {
+    if (!usuarioId) return; // Solo ejecutar si tenemos usuarioId
     try {
-      const all = await controller.obtenerPresupuestos(usuarioId, mesFiltro, anioFiltro);
+      const all = await presupuestoController.obtenerPresupuestos(usuarioId, mesFiltro, anioFiltro);
       const filtered = categoriaFiltro && categoriaFiltro.trim() !== ''
         ? all.filter(p => p.categoria.toLowerCase().includes(categoriaFiltro.toLowerCase()))
         : all;
@@ -79,30 +86,32 @@ const PantallaPresupuestoIntegrada = ({ usuarioId = 1 }) => {
   };
 
   useEffect(() => {
-    refreshFromDB();
-  }, [categoriaFiltro, mesFiltro, anioFiltro]);
+    if (usuarioId) {
+      refreshFromDB();
+    }
+  }, [categoriaFiltro, mesFiltro, anioFiltro, usuarioId]);
 
   useEffect(() => {
-  const nuevas = [];
+    const nuevas = [];
 
-  presupuestos.forEach(p => {
-    const porc = (p.montoGastado / (p.montoLimite || 1)) * 100;
+    presupuestos.forEach(p => {
+      const porc = (p.montoGastado / (p.montoLimite || 1)) * 100;
 
-    if (porc >= 100) {
-      nuevas.push({
-        tipo: 'error',
-        mensaje: `🚨 Presupuesto de "${p.categoria}" EXCEDIDO`
-      });
-    } else if (porc >= 80) {
-      nuevas.push({
-        tipo: 'warning',
-        mensaje: `⚠️ Presupuesto de "${p.categoria}" está al ${porc.toFixed(0)}%`
-      });
-    }
-  });
+      if (porc >= 100) {
+        nuevas.push({
+          tipo: 'error',
+          mensaje: `Presupuesto de "${p.categoria}" EXCEDIDO`
+        });
+      } else if (porc >= 80) {
+        nuevas.push({
+          tipo: 'warning',
+          mensaje: `Presupuesto de "${p.categoria}" está al ${porc.toFixed(0)}%`
+        });
+      }
+    });
 
-  setNotificaciones(nuevas);
-}, [presupuestos]);
+    setNotificaciones(nuevas);
+  }, [presupuestos]);
 
   const abrirCrear = () => {
     setEditando(null);
@@ -134,14 +143,14 @@ const PantallaPresupuestoIntegrada = ({ usuarioId = 1 }) => {
 
       if (editando) {
         // actualizar (solo categoría y monto)
-        await controller.actualizarPresupuesto(editando.id, categoriaInput, monto);
+        await presupuestoController.actualizarPresupuesto(editando.id, categoriaInput, monto);
       } else {
         // crear (usa los filtros de mes/anio actuales para el presupuesto)
-        await controller.crearPresupuesto(usuarioId, categoriaInput, monto, mesFiltro, anioFiltro);
+        await presupuestoController.crearPresupuesto(usuarioId, categoriaInput, monto, mesFiltro, anioFiltro);
       }
 
       setModalVisible(false);
-      await controller.actualizarTodosLosPresupuestos(usuarioId);
+      await presupuestoController.actualizarTodosLosPresupuestos(usuarioId);
       await refreshFromDB();
     } catch (error) {
       console.error('Guardar presupuesto error', error);
@@ -160,7 +169,7 @@ const PantallaPresupuestoIntegrada = ({ usuarioId = 1 }) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await controller.eliminarPresupuesto(id);
+              await presupuestoController.eliminarPresupuesto(id);
               await refreshFromDB();
             } catch (error) {
               console.error('Eliminar presupuesto error', error);
@@ -211,26 +220,26 @@ const PantallaPresupuestoIntegrada = ({ usuarioId = 1 }) => {
   };
 
   const MostrarNotificaciones = () => {
-  if (notificaciones.length === 0) return null;
+    if (notificaciones.length === 0) return null;
 
-  return (
-    <View style={styles.notificacionBox}>
-      {notificaciones.map((n, i) => (
-        <View
-          key={i}
-          style={[
-            styles.notificacionItem,
-            n.tipo === 'error'
-              ? { backgroundColor: '#dc2626' }
-              : { backgroundColor: '#facc15' }
-          ]}
-        >
-          <Text style={styles.notificacionTexto}>{n.mensaje}</Text>
-        </View>
-      ))}
-    </View>
-  );
-};
+    return (
+      <View style={styles.notificacionBox}>
+        {notificaciones.map((n, i) => (
+          <View
+            key={i}
+            style={[
+              styles.notificacionItem,
+              n.tipo === 'error'
+                ? { backgroundColor: '#dc2626' }
+                : { backgroundColor: '#facc15' }
+            ]}
+          >
+            <Text style={styles.notificacionTexto}>{n.mensaje}</Text>
+          </View>
+        ))}
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.contenedorPrincipal}>
@@ -238,9 +247,14 @@ const PantallaPresupuestoIntegrada = ({ usuarioId = 1 }) => {
         <ScrollView contentContainerStyle={styles.scrollContenido} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
             <Text style={styles.titleText}>Presupuestos</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('MiCuenta')}>
-              <Text style={styles.helpText}>Mi Cuenta</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+              <TouchableOpacity onPress={refreshFromDB}>
+                <Text style={styles.helpText}>↻</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => navigation.navigate('MiCuenta')}>
+                <Text style={styles.helpText}>Mi Cuenta</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* filtros */}
@@ -320,12 +334,18 @@ const PantallaPresupuestoIntegrada = ({ usuarioId = 1 }) => {
             />
 
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
-              <TouchableOpacity style={[styles.botonModal, { backgroundColor: '#4b5563', flex: 1 }]} onPress={() => { setModalVisible(false); }}>
-                <Text style={{ color: 'white', textAlign: 'center' }}>Cancelar</Text>
+              <TouchableOpacity
+                style={[styles.botonModal, styles.botonCancelar, { flex: 1 }]}
+                onPress={() => { setModalVisible(false); }}
+              >
+                <Text style={styles.textoBotonCancelar}>Cancelar</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={[styles.botonModal, { flex: 1 }]} onPress={guardarPresupuesto}>
-                <Text style={{ color: 'white', textAlign: 'center' }}>{editando ? 'Guardar' : 'Crear'}</Text>
+              <TouchableOpacity
+                style={[styles.botonModal, styles.botonCrear, { flex: 1 }]}
+                onPress={guardarPresupuesto}
+              >
+                <Text style={styles.textoBotonCrear}>{editando ? 'Guardar' : 'Crear'}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -455,16 +475,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   botonAgregarCategoria: {
-    backgroundColor: '#10b981',
+    backgroundColor: 'white',
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: 'center',
     marginBottom: 12,
   },
   textoAgregarCategoria: {
-    color: 'white',
+    color: '#374151',
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   botonConfiguracion: {
     flexDirection: 'row',
@@ -512,9 +532,24 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   botonModal: {
-    backgroundColor: '#0ea5a4',
     paddingVertical: 12,
     borderRadius: 8,
+  },
+  botonCancelar: {
+    backgroundColor: 'white',
+  },
+  textoBotonCancelar: {
+    color: '#374151',
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  botonCrear: {
+    backgroundColor: 'white',
+  },
+  textoBotonCrear: {
+    color: '#374151',
+    textAlign: 'center',
+    fontWeight: '600',
   },
   actionButton: {
     backgroundColor: '#2563eb',

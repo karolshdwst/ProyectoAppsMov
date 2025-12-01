@@ -6,10 +6,6 @@ export class PresupuestoController {
         this.listeners = [];
     }
 
-    async initialize() {
-        await DatabaseService.initialize();
-    }
-
     // CREAR PRESUPUESTO
     async crearPresupuesto(usuarioId, categoria, montoLimite, mes, anio) {
         try {
@@ -82,48 +78,7 @@ export class PresupuestoController {
         }
     }
 
-    async actualizarTodosLosPresupuestos(usuarioId) {
-        const presupuestos = await this.obtenerPresupuestos(usuarioId);
-
-        for (const p of presupuestos) {
-            // obtener transacciones gastadas del mismo mes, año y categoría
-            const transacciones = await this.obtenerTransaccionesPorCategoriaYMes(
-                usuarioId,
-                p.categoria,
-                p.mes,
-                p.anio
-            );
-
-            const montoGastado = transacciones
-                .filter(t => t.tipo === "gasto")
-                .reduce((acc, t) => acc + Number(t.monto), 0);
-
-            // actualizar el presupuesto
-            await this.actualizarMontoGastado(p.id, montoGastado);
-        }
-    }
-
-    async obtenerTransaccionesPorCategoriaYMes(usuarioId, categoria, mes, anio) {
-        return await this.db.getAllAsync(
-            `SELECT * FROM transacciones 
-         WHERE usuarioId = ? 
-           AND categoria = ?
-           AND strftime('%m', fecha) = ?
-           AND strftime('%Y', fecha) = ?`,
-            usuarioId,
-            categoria,
-            String(mes).padStart(2, "0"),
-            String(anio)
-        );
-    }
-
-    async actualizarMontoGastado(idPresupuesto, monto) {
-        await this.db.runAsync(
-            `UPDATE presupuestos SET montoGastado = ? WHERE id = ?`,
-            monto,
-            idPresupuesto
-        );
-    }
+    // OBTENER PRESUPUESTOS DEL MES ACTUAL
 
     // OBTENER PRESUPUESTOS DEL MES ACTUAL
     async obtenerPresupuestosMesActual(usuarioId) {
@@ -288,3 +243,6 @@ export class PresupuestoController {
         this.listeners.forEach(callback => callback());
     }
 }
+
+// Exportar como singleton
+export default new PresupuestoController();

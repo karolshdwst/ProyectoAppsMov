@@ -11,11 +11,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { PieChart, BarChart } from 'react-native-chart-kit';
-import { TransaccionController } from '../../controllers/TransaccionesController';
-import { AuthController } from '../../controllers/AuthController';
-
-const transaccionController = new TransaccionController();
-const authController = new AuthController();
+import transaccionController from '../../controllers/TransaccionesController';
+import authController from '../../controllers/AuthController';
 
 const { width } = Dimensions.get('window');
 
@@ -31,8 +28,8 @@ const StatisticsScreen = () => {
     try {
       setLoading(true);
 
+      // Solo inicializar AuthController que necesita cargar la sesión
       await authController.initialize();
-      await transaccionController.initialize();
 
       const user = await authController.obtenerUsuarioActual();
 
@@ -51,16 +48,10 @@ const StatisticsScreen = () => {
     }
   }, [navigation]);
 
+  // Load data on mount
   useEffect(() => {
     cargarDatos();
-
-    transaccionController.addListener(cargarDatos);
-    authController.addListener(cargarDatos);
-
-    return () => {
-      transaccionController.removeListener(cargarDatos);
-      authController.removeListener(cargarDatos);
-    };
+    // Removidos los listeners automáticos - solo actualización manual con botón 🔄
   }, [cargarDatos]);
 
   // Filter transactions by selected period
@@ -156,9 +147,14 @@ const StatisticsScreen = () => {
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.titleText}>Estadísticas</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('MiCuenta')}>
-              <Text style={styles.helpText}>Mi Cuenta</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+              <TouchableOpacity onPress={cargarDatos}>
+                <Text style={styles.helpText}>↻</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => navigation.navigate('MiCuenta')}>
+                <Text style={styles.helpText}>Mi Cuenta</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Period Selector */}
@@ -340,17 +336,18 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   periodButton: {
-    backgroundColor: '#4b5563',
+    backgroundColor: 'white',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 12,
   },
   periodButtonActive: {
-    backgroundColor: '#06b6d4',
+    backgroundColor: '#75787eff',
   },
   periodButtonText: {
-    color: '#d1d5db',
+    color: '#374151',
     fontSize: 14,
+    fontWeight: '600',
   },
   periodButtonTextActive: {
     color: 'white',

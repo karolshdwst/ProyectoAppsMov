@@ -47,18 +47,13 @@ const ForgotPasswordScreen = () => {
             const resultado = await DatabaseService.generarContrasenaTemporalYEnviar(email.trim());
 
             if (resultado.success) {
-                // En desarrollo, mostramos la contraseña temporal
-                // EN PRODUCCIÓN, esto se enviaría por email
                 Alert.alert(
-                    'Contraseña Temporal Generada',
-                    `Se ha generado una nueva contraseña temporal.\n\n` +
-                    `Para desarrollo, tu contraseña temporal es:\n${resultado.contrasenaTemporalDEV}\n\n` +
-                    `Por favor, cámbiala después de iniciar sesión.\n\n` +
-                    `(En producción, esto se enviaría por correo electrónico)`,
+                    'Correo Enviado',
+                    'Si el correo está registrado, recibirás una nueva contraseña temporal en unos momentos.\n\nRevisa tu bandeja de entrada y spam.',
                     [
-                        { 
-                            text: 'OK', 
-                            onPress: () => navigation.navigate('Login') 
+                        {
+                            text: 'Ir al Login',
+                            onPress: () => navigation.navigate('Login')
                         }
                     ]
                 );

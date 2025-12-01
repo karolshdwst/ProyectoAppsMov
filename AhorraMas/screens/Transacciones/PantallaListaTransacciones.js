@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import DatabaseService from '../../database/DatabaseService';
+import transaccionController from '../../controllers/TransaccionesController';
+import authController from '../../controllers/AuthController';
 import {
   View,
   Text,
@@ -21,19 +22,14 @@ const TransactionsListScreen = () => {
   const [filterDate, setFilterDate] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Cargar transacciones al enfocar la pantalla
-  useFocusEffect(
-    React.useCallback(() => {
-      cargarTransacciones();
-    }, [])
-  );
-
-  const cargarTransacciones = async () => {
+  // Cargar transacciones
+  const cargarTransacciones = useCallback(async () => {
     try {
       setLoading(true);
-      const sesion = await DatabaseService.obtenerSesion();
-      if (sesion) {
-        const data = await DatabaseService.obtenerTransaccionesPorUsuario(sesion.id);
+      await authController.initialize();
+      const user = await authController.obtenerUsuarioActual();
+      if (user) {
+        const data = await transaccionController.obtenerTransacciones(user.id);
         setTransactions(data);
       }
     } catch (error) {
@@ -42,7 +38,20 @@ const TransactionsListScreen = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Load on mount only
+  useEffect(() => {
+    cargarTransacciones();
+    // Removidos los listeners automáticos - solo actualización manual con botón 🔄
+  }, [cargarTransacciones]);
+
+  // Cargar al enfocar la pantalla
+  useFocusEffect(
+    React.useCallback(() => {
+      cargarTransacciones();
+    }, [cargarTransacciones])
+  );
 
   const categories = Array.from(new Set(transactions.map(t => t.categoria)));
 
@@ -65,8 +74,9 @@ const TransactionsListScreen = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await DatabaseService.eliminarTransaccion(id);
-              cargarTransacciones(); // Recargar lista
+              await transaccionController.eliminarTransaccion(id);
+              // Recargar manualmente ya que removimos los listeners automáticos
+              await cargarTransacciones();
             } catch (error) {
               console.error('Error al eliminar:', error);
               Alert.alert('Error', 'No se pudo eliminar la transacción');
@@ -121,7 +131,7 @@ const TransactionsListScreen = () => {
             style={styles.actionButton}
             onPress={() => handleDelete(transaction.id)}
           >
-            <Text style={[styles.actionButtonText, styles.deleteButtonText]}>Borrar</Text>
+            <Text style={[styles.actionButtonText, styles.deleteButtonText]}>Eliminar</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -151,9 +161,14 @@ const TransactionsListScreen = () => {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.titleText}>Transacciones</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('MiCuenta')}>
-            <Text style={styles.helpText}>Mi Cuenta</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+            <TouchableOpacity onPress={cargarTransacciones}>
+              <Text style={styles.helpText}>↻</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('MiCuenta')}>
+              <Text style={styles.helpText}>Mi Cuenta</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Filters */}
@@ -406,18 +421,21 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   actionButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    borderRadius: 12,
-    padding: 8,
-
-    color: '#d1d5db',
+    color: '#ffffffff',
+    fontWeight: '600',
+    backgroundColor: '#2563eb',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginLeft: 8,
   },
   deleteButtonText: {
     backgroundColor: '#ef4444',
-    borderRadius: 12,
-    padding: 5,
     color: '#ffffffff',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginLeft: 8,
   },
   addButton: {
     backgroundColor: 'white',

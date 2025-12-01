@@ -86,6 +86,42 @@ export class AuthController {
     }
 
     // CERRAR SESIÓN
+    async actualizarMetaAhorro(usuarioId, nuevaMeta, nuevoPorcentaje = 100) {
+        try {
+            const usuarioActualizado = await DatabaseService.actualizarMetaAhorro(usuarioId, nuevaMeta, nuevoPorcentaje);
+            // Actualizar sesión si es el usuario actual
+            if (this.usuarioActual && this.usuarioActual.id === usuarioId) {
+                this.usuarioActual.metaAhorro = parseFloat(nuevaMeta);
+                this.usuarioActual.porcentajeAhorro = parseInt(nuevoPorcentaje);
+                await DatabaseService.guardarSesion(this.usuarioActual);
+            }
+            this.notifyListeners();
+            return usuarioActualizado;
+        } catch (error) {
+            console.error('Error al actualizar meta de ahorro:', error);
+            throw error;
+        }
+    }
+
+    async actualizarPerfil(usuarioId, nombreCompleto, telefono) {
+        try {
+            const usuarioActualizado = await DatabaseService.actualizarPerfil(usuarioId, nombreCompleto, telefono);
+
+            // Actualizar sesión si es el usuario actual
+            if (this.usuarioActual && this.usuarioActual.id === usuarioId) {
+                this.usuarioActual.nombreCompleto = nombreCompleto;
+                this.usuarioActual.telefono = telefono;
+                await DatabaseService.guardarSesion(this.usuarioActual);
+            }
+
+            this.notifyListeners();
+            return usuarioActualizado;
+        } catch (error) {
+            console.error('Error al actualizar perfil:', error);
+            throw error;
+        }
+    }
+
     async cerrarSesion() {
         try {
             await DatabaseService.cerrarSesion();
@@ -108,7 +144,7 @@ export class AuthController {
 
     async recargarUsuarioActual() {
         if (!this.usuarioActual) return null;
-        
+
         try {
             const usuario = await DatabaseService.obtenerUsuarioPorId(this.usuarioActual.id);
             if (usuario) {
@@ -151,3 +187,6 @@ export class AuthController {
         this.listeners.forEach(callback => callback());
     }
 }
+
+// Exportar como singleton
+export default new AuthController();
