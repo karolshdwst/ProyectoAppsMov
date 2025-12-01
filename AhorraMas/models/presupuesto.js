@@ -1,4 +1,4 @@
-export class presupuesto {
+export class Presupuesto {
     constructor(id, usuarioId, categoria, montoLimite, montoGastado, mes, anio, fechaCreacion) {
         this.id = id;
         this.usuarioId = usuarioId;

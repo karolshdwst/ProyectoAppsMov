@@ -716,7 +716,7 @@ class DatabaseService {
     }
 
 
-    // ESTADÍSTICAS Y REPORTES
+
 
     async obtenerEstadisticasMensuales(usuarioId, mes, anio) {
         const fechaInicio = new Date(anio, mes - 1, 1).toISOString();
@@ -856,6 +856,63 @@ class DatabaseService {
             );
             return await this.obtenerPresupuestoPorId(id);
         }
+    }
+
+    async estaExcedido(usuarioId, categoria, mes, anio) {
+        const mesActual = mes || new Date().getMonth() + 1;
+        const anioActual = anio || new Date().getFullYear();
+
+        const presupuestos = await this.obtenerPresupuestosPorUsuario(usuarioId, mesActual, anioActual);
+        const presupuesto = presupuestos.find(p => p.categoria === categoria);
+
+        if (!presupuesto) return false;
+
+        return presupuesto.montoGastado > presupuesto.montoLimite;
+    }
+
+    async actualizarTransaccion(id, monto, tipo, categoria, fecha, descripcion) {
+        const transaccionOriginal = await this.obtenerTransaccionPorId(id);
+        if (!transaccionOriginal) throw new Error('Transacción no encontrada');
+
+        const usuarioId = transaccionOriginal.usuarioId;
+
+        const mesOriginal = new Date(transaccionOriginal.fecha).getMonth() + 1;
+        const anioOriginal = new Date(transaccionOriginal.fecha).getFullYear();
+
+        const mesNuevo = new Date(fecha).getMonth() + 1;
+        const anioNuevo = new Date(fecha).getFullYear();
+
+        if (Platform.OS === 'web') {
+            const transacciones = JSON.parse(localStorage.getItem(this.storageKeys.transacciones));
+            const index = transacciones.findIndex(t => t.id === id);
+
+            if (index === -1) throw new Error('Transacción no encontrada');
+
+            transacciones[index] = {
+                ...transacciones[index],
+                monto: parseFloat(monto),
+                tipo,
+                categoria,
+                fecha,
+                descripcion
+            };
+
+            localStorage.setItem(this.storageKeys.transacciones, JSON.stringify(transacciones));
+        } else {
+            await this.db.runAsync(
+                'UPDATE transacciones SET monto = ?, tipo = ?, categoria = ?, fecha = ?, descripcion = ? WHERE id = ?;',
+                parseFloat(monto), tipo, categoria, fecha, descripcion, id
+            );
+        }
+
+        await this.revertirBalanceTransaccion(usuarioId, transaccionOriginal.monto, transaccionOriginal.tipo);
+        await this.actualizarBalanceDespuesDeTransaccion(usuarioId, monto, tipo);
+
+       
+        await this.actualizarMontoGastadoPresupuesto(usuarioId, transaccionOriginal.categoria, mesOriginal, anioOriginal);
+        await this.actualizarMontoGastadoPresupuesto(usuarioId, categoria, mesNuevo, anioNuevo);
+
+        return await this.obtenerTransaccionPorId(id);
     }
 
     async eliminarPresupuesto(id) {
